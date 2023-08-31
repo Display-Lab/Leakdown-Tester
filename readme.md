@@ -8,7 +8,9 @@ As of current date, the tool is focused around testing the [Precision Feedback P
  API, but more APIs can be configured as targets in future releases.
 
 Continue reading for details on making use of LDT to test APIs.
+
 # Leakdown Tester User Manual
+Here are listed the currently implemented user commands, environmental variables, and instructions for use.
 ## Environmental Variables
 1) `CSVPATH` - Filepath to a local CSV file. 
 The script checks for this on startup, as JSON content to send as a POST request is currently required. You can specify this filepath with the csv argument, or you can set the env var and specify a different filepath with the csv argument which will override the environment variable. A filepath must be specified if not using the `useGit` argument.
@@ -120,57 +122,3 @@ Options for configuring the JSON payload pulled from a user-specified CSV file.
 - Default: None
 - Enter the filepath to the Service Account file used to read from for OAuth2.0 authenticating POST requests to IAP-protected APIs.
 - When specified, overwrites 'SAPATH' environmental variable.
-
-
-## Setup
-1) Download the entire Leakdown Testing folder from this Github repository (use a git clone or manual download)
-2) Find the folder in your file browser
-3) That's all! (for now...)
-
-### Setting up Environment Variables
-Env Var declaration is OS dependent, and can be rather meddlesome, so detailed instructions are below for the novice to command line tools and using shells. 
-For my windows warriors:
-- Use this to set a temporary env var in this command prompt instance only:
-```shell
-set VARNAME="content"
-```
-- With admin priviledges, you can set a **persistant** env var:
-```shell
-setx VARNAME "content"
-```
-Verify the changes took, which might require reloading your command prompt. Check with the following:
-```shell
-echo $ENV:VARNAME
-```
-Verify that it reads back correctly.
-
----
-Mac users, you can do pretty much the same thing by a different method:
-```bash
-export VARNAME=content
-```
-There is a way to make it persist, though it requires changing the config of your shell, which should be somwhere like `/bin/bash`, etc. 
-Use:
-```bash
-echo $SHELL
-```
-Then we edit the profile of your terminal of choice (generally zsh or bash, directions below are for bash):
-```zsh
-nano ~/.bash_profile
-export export VARNAME=/content/you/want
-```
-Then reload your console, you can use a console prompt for that:
- ```bash
- source ~/.bash_profile
-```
-Whatever works for you!
-## Setting up Google Cloud Authentication
-1) Contact the developers to get access to the client secret details (service account and target audience)
-2) Create your service account file
-   - Make sure to save it as a .json file, with the proper encoding
-   - Copy the file as a path with right click, or any way you like.
-3) Set your SAPATH environmental variable
-   - Use the guidance in the above section on setting env vars if you get confused
-   - Set SAPATH to "path\to\service_acccount_details.json"
-4) Set your TARGET_AUDIENCE environmental variable
-   - Using the target audience string you recieved by asking for it from someone who knows it, set the env var TARGET_AUDIENCE to "target audience string details"
