@@ -11,13 +11,6 @@ Continue reading for details on making use of LDT to test APIs.
 
 # Leakdown Tester User Manual
 Here are listed the currently implemented user commands, environmental variables, and instructions for use.
-## Environmental Variables
-1) `CSVPATH` - Filepath to a local CSV file. 
-The script checks for this on startup, as JSON content to send as a POST request is currently required. You can specify this filepath with the csv argument, or you can set the env var and specify a different filepath with the csv argument which will override the environment variable. A filepath must be specified if not using the `useGit` argument.
-2) `PFP` - URL of the PFP API endpoint where the POST requests are sent.
-It is likely faster to use the `--target` argument to set the API endpoint rather than to set the environment variable here, however both methods are implemented. Use what works for you.
-3) `TARGET_AUDIENCE` - Variable which contains the "target audience" part of the authentication process for connecting with the GCP PFP API. 
-4) `SAPATH` - Variable that sets path to your own Service Account JSON file for use in authorizing POSTs to the GCP PFP instance.
 
 ## Arguments
 Below are the arguments that can be used to run LDT. Initializing with all default values will yield a single post request from CSV file sent to a locally hosted API instance.
@@ -122,3 +115,14 @@ Options for configuring the JSON payload pulled from a user-specified CSV file.
 - Default: None
 - Enter the filepath to the Service Account file used to read from for OAuth2.0 authenticating POST requests to IAP-protected APIs.
 - When specified, overwrites 'SAPATH' environmental variable.
+
+## Environmental Variables
+1) `CSVPATH` - Filepath to a local CSV file.
+- The script checks for this on startup, as JSON content to send as a POST request is currently required. You can specify this filepath with the csv argument, or you can set the env var and specify a different filepath with the csv argument which will override the environment variable. A filepath must be specified if not using the `useGit` argument.
+
+2) `PFP` - URL of the PFP API endpoint where the POST requests are sent.
+- It is likely faster to use the `--target` argument to set the API endpoint rather than to set the environment variable here, however both methods are implemented. Use what works for you.
+
+3) `TARGET_AUDIENCE` - Variable which contains the "target audience" part of the authentication process for connecting with the GCP PFP API. 
+
+4) `SAPATH` - Variable that sets path to your own Service Account JSON file for use in authorizing POSTs to the GCP PFP instance.
