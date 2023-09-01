@@ -343,7 +343,7 @@ def csv_jsoner(path):
 ### from any content source, and against any of the available API endpoints.
 
 ## Send POST request to unprotected URLs...
-def send_unprotected_post(pfp, fullMessage):
+def send_post(pfp, fullMessage):
     log.debug("\tRunning 'send_unprotected_post'...")
     header = {"Content-Type": "application/json"}
     response = requests.post(pfp, data=fullMessage, headers=header)
@@ -352,12 +352,9 @@ def send_unprotected_post(pfp, fullMessage):
 
 
 ## Send POST request to IAP protected URLs...
-def send_iap_post(url, fullMessage, method="POST", **kwargs):
+def send_iap_post(url, fullMessage, method="POST"):
     log.debug("\tRunning 'send_iap_post'...")
-    # Set the default timeout, if missing
-    if "timeout" not in kwargs:
-        kwargs["timeout"] = 90
-
+   
     # Check if token valid, refresh expired token if not
     if oidcToken.valid != True:
         request = google.auth.transport.requests.Request()
@@ -380,7 +377,7 @@ def post_and_respond(fullMessage, requestID):
     log.debug("\tRunning 'post_and_respond'...")
     try:
         if args.target != "cloud":
-            sentPost = send_unprotected_post(pfp, fullMessage)
+            sentPost = send_post(pfp, fullMessage)
 
         elif args.target == "cloud":
             sentPost = send_iap_post(pfp, fullMessage)
