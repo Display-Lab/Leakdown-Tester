@@ -14,6 +14,7 @@ Here are listed the currently implemented user commands, environmental variables
 
 ## Arguments
 Below are the arguments that can be used to run LDT. Initializing with all default values will yield a single post request from CSV file sent to a locally hosted API instance.
+
 ---
 Format for the below argument specifications:
 `--argument` `datatype`
