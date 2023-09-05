@@ -17,6 +17,7 @@ Below are the arguments that can be used to run LDT. Initializing with all defau
 
 ---
 Format for the below argument specifications:
+
 `--argument` `datatype`
 - Default value of `datatype`
 - Details about the argument
