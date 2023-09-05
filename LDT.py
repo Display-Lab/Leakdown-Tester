@@ -272,8 +272,7 @@ def handle_response(response, requestID):
         log.info(f"{requestID}:\tResponse recieved in {response.elapsed.total_seconds():.3f} seconds.")
         apiReturn = response.json()
         staffID = apiReturn["staff_number"]
-
-        print(apiReturn)
+        #print(apiReturn)
         
         if args.respond:    # Print output if asked
             text_back(apiReturn)
