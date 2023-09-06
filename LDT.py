@@ -79,7 +79,7 @@ log = logging.getLogger("LeakdownTester")                                  # Sta
 
 ##### Startup Functions ###############################################################
 ### Handle API endpoint, script behavior, and number of requests to send.
-### V 1.4.3+ has integrated readback as configurations are set.
+### V 0.4.3+ has integrated readback as configurations are set.
 
 ## Set script behavior for JSON content source (+ error handling and readback)...
 def set_behavior():
