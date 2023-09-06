@@ -1,4 +1,13 @@
 # Leakdown Tester Changelog
+## Version 2.0.1
+*Released TBD*
+
+**Patch:** Fixed V&V functions with new structure of 'acceptable_by' key
+- Restored causal pathway verification with `--cpVerify`
+	- Iterates through acceptable_by pathways and searches for a match
+	- *Planned*: Verify against candidate message template links to restore specificity verification
+-   
+
 ## Version 2.0.0
 *Released 8/31/2023*
 
@@ -75,7 +84,7 @@ Added function `post_and_respond`
 *Released 8/18/23*
 
  Updated handle_response() function
-+ Refactored code to check first for 200 status code response, THEN to pull JSON keys for vignette validation
++ Refactored code to check first for 200 status code response, THEN to pull JSON keys for vignette verification
 + Allows for increased description of bad API responses
 + Refactoring into handle_response eliminates 8 lines of code from script
 
@@ -124,8 +133,8 @@ Added function `post_and_respond`
  Worked on GCP testing functionality
 + Assert statements added to ensure requisite info present before POSTing to GCP
 
- Re-worked vignette validation functionality
-+ Clarified language returned by LDT to tell user validation is only against expected vignette content pairings, not validating overall message in some way.
+ Re-worked vignette verification functionality
++ Clarified language returned by LDT to tell user verification is only against expected vignette content pairings, not validating overall message in some way.
 
  Refactored repo_test function
 + Removed repeat code blocks to allow for implementation of single repo test function
@@ -135,10 +144,10 @@ Added function `post_and_respond`
 
  Changed `LDT_Addendum`
 + Changed from checking persona based keys to staff_number based keys
-+ Allows for validation of any successful post request
++ Allows for verification of any successful post request
 
- Changed validation procedure to allow any post request to be validated
-+ Implemented validation of post request(s) based on using staff_number to compare against keys vs. using personas
+ Changed verification procedure to allow any post request to be validated
++ Implemented verification of post request(s) based on using staff_number to compare against keys vs. using personas
 + Successfully tested functionality with both CSV and GitHub input messages
 
 ## Version 1.4.0
@@ -146,7 +155,7 @@ Added function `post_and_respond`
 
  Added `LDT_Addendum.py` to Leakdown Tester folder
 + Functions as a store for large text variables that may need to periodically change without impacting `leakTester.py`
-+ Contains validation target values
++ Contains verification target values
 + Contains header and footer of input_message JSON content for CSV payload building
 
  Removed function `assemble_payload`

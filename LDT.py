@@ -40,9 +40,9 @@ behaviorGroup.add_argument("--CP", choices=["goal_approach","goal_gain","goal_lo
 behaviorGroup.add_argument("--allCPs", action="store_true", help="SetTrue: Test all causal-pathway-specific input message files.")
 #
 #  Output V&V arguments
-validationGroup = ap.add_mutually_exclusive_group() # Mutually exclude V&V operations
-validationGroup.add_argument("--vignVal", action="store_true", help="SetTrue: Compare output message keys against vignette data library.")
-validationGroup.add_argument("--cpVal", action="store_true", help="SetTrue: Compare input and output causal pathway for match.")
+verificationGroup = ap.add_mutually_exclusive_group() # Mutually exclude V&V operations
+verificationGroup.add_argument("--vignVerify", action="store_true", help="SetTrue: Compare output message keys against vignette data library.")
+verificationGroup.add_argument("--cpVerify", action="store_true", help="SetTrue: Compare input and output causal pathway for match.")
 #
 # CSV payload config arguments
 ap.add_argument("--RI", type=int, default=0, help="First row of data to read from CSV.")
@@ -61,7 +61,7 @@ pfp         = os.environ.get("PFP")
 audience    = os.environ.get("TARGET_AUDIENCE")
 perfPath    = args.csv      if args.csv != None     else    os.environ.get("CSVPATH")  # Path to performance CSV data
 servAccPath = args.servAcc  if args.servAcc != None else    os.environ.get("SAPATH")   # Path to service account file
-chkCP       = args.cpVal    if args.CP != None or args.allCPs    else None             # Only allow CP check if testing CPs
+chkCP       = args.cpVerify if args.CP != None or args.allCPs    else None             # Only allow CP check if testing CPs
 
 
 #### Logging module configuration ######################################################
@@ -73,7 +73,9 @@ logging.basicConfig(level=logLevel, filename=logFilename,
                     format=printLevel+' %(message)s')
 log = logging.getLogger("LeakdownTester")                                  # Start and name logger instance
 
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 ##### Startup Functions ###############################################################
 ### Handle API endpoint, script behavior, and number of requests to send.
@@ -174,6 +176,9 @@ def calc_total_reqs(behavior):
     return totalRequests
 
 
+
+
+
 #### API Response Handling #########################################################
 ### These functions print out response output, handle making logs of response output,
 ### and validate responses against known-good data (vignette specifications)
@@ -199,8 +204,8 @@ def text_back(postReturn):
 
 
 ## Check output message for known-good metadata pairs...
-def response_vign_validate(apiReturn, staffID):
-    log.debug("\tRunning 'response_vign_validate'...")
+def response_vign_verify(apiReturn, staffID):
+    log.debug("\tRunning 'response_vign_verify..")
     validKeys = vignAccPairs.get(staffID)
     chosenKeys = {
         "acceptable_by": apiReturn["selected_candidate"].get("acceptable_by").lower(),
@@ -212,12 +217,12 @@ def response_vign_validate(apiReturn, staffID):
     
     # Check keys and print results
     if chosenKeys in validKeys:
-        log.info(f"VIGNETTE VALIDATION:\tPASS\nValid pairs:")
+        log.info(f"VIGNETTE VERIFICATION:\tPASS\nValid pairs:")
         for formattedValidKey in formattedValidKeys:
             log.info(f"\t{formattedValidKey}")
         log.info(f"API returned pair:\n\t\t{chosenKeys['acceptable_by'].title()}\t\t{chosenKeys['measure']}\n")
     else:
-        log.info(f"VIGNETTE VALIDATION:\tFAIL\nExpected valid pairs:")
+        log.info(f"VIGNETTE VERIFICATION:\tFAIL\nExpected valid pairs:")
         for formattedValidKey in formattedValidKeys:
             log.info(f"\t{formattedValidKey}")
         log.info(f"API returned pair:\n\t\t{chosenKeys['acceptable_by'].title()}\t\t{chosenKeys['measure']}\n")
@@ -226,23 +231,28 @@ def response_vign_validate(apiReturn, staffID):
 
 
 ## Check output message against requested Causal Pathway...
-def response_CP_validate(apiReturn, causalPathway):
-    log.debug("\tRunning 'response_CP_validate'...")
+def response_CP_verify(apiReturn, causalPathway):
+    log.debug("\tRunning 'response_CP_verify'...")
     try:
-        assert causalPathway != None, "Causal Pathway passed to validation function is not a string"
+        assert causalPathway is not None and isinstance(causalPathway, str), "Causal Pathway passed to verification function is not a valid string"
+        assert apiReturn["selected_candidate"].get("acceptable_by") is not None, "No 'Acceptable By' keys returned by API"
     except AssertionError as e:
         log.critical("Assertion error: " + str(e))
         return
     
-    causalPathway = causalPathway.replace("_"," ")      # replace underscores of user input with spaces
-    selectedCP = apiReturn["selected_candidate"].get("acceptable_by").lower()
+    causalPathway = causalPathway.replace("_", " ")  # replace underscores of user input with spaces
+    selectedCandidate = apiReturn["selected_candidate"]
+    selectedCPList = selectedCandidate.get("acceptable_by")
     
-    # Check for match between selected causal pathway and specified causal pathway
-    if causalPathway == selectedCP:
-        log.info(f"CAUSAL PATHWAY VALIDATION:\tPASS\nSpecified Pathway:\t{causalPathway}\nAccepted Pathway:\t{selectedCP}\n")
-    else:
-        log.info(f"CAUSAL PATHWAY VALIDATION:\tFAIL\nSpecified Pathway:\t{causalPathway}\nAccepted Pathway:\t{selectedCP}\n")
-
+    for selectedCP in selectedCPList:
+        selectedCP = selectedCP.lower()
+        if causalPathway == selectedCP:
+            log.info(f"CAUSAL PATHWAY VERIFICATION:\tPASS\n\t\tSpecified Pathway:\t{causalPathway}\n\t\tAccepted Pathway:\t{selectedCP}")
+            log.info(f"PFP returns acceptable candidates: {selectedCPList}\n")
+            break
+        else:
+            log.info(f"CAUSAL PATHWAY VERIFICATION:\tFAIL\n\t\tSpecified Pathway:\t{causalPathway}\n\t\tAccepted Pathway:\t{selectedCPList}")
+            log.info(f"No matching causal pathway found for '{causalPathway}'.\n")
 
 
 ## Save PFP API responses for manual review...
@@ -277,11 +287,11 @@ def handle_response(response, requestID):
         if args.respond:    # Print output if asked
             text_back(apiReturn)
 
-        if args.vignVal:    # Validate vignette measure/causal pathway pair in output if asked
-            response_vign_validate(apiReturn, staffID)
+        if args.vignVerify:    # Validate vignette measure/causal pathway pair in output if asked
+            response_vign_verify(apiReturn, staffID)
 
         if chkCP:       # Validate causal pathway output if asked
-            response_CP_validate(apiReturn, args.CP)
+            response_CP_verify(apiReturn, args.CP)
             # not an ideal way to incorporate which causal pathway we want to assert, but workable
             
         if args.saveResponse:    # Save output if asked
@@ -290,6 +300,8 @@ def handle_response(response, requestID):
     else:
         log.error("Bad response from target API:\n\t\t\tStatus Code:\t{!r}\nHeaders: {!r}\n{!r}".format(
         response.status_code, response.headers, response.text))
+
+
 
 
 
@@ -335,6 +347,9 @@ def csv_jsoner(path):
         if i < len(performance) - 1:
             jsonedData += ",\n\t"   # formatting
     return jsonedData
+
+
+
 
 
 #### POST Functions ###################################################################
@@ -419,7 +434,7 @@ def repo_test(mode, threadIndex, testIndex, requestID):
     
     for requestIndex, inputID in enumerate(hitlist, start=1):
         requestID = f"Thread {threadIndex}, Test {testIndex}, Request {requestIndex}" # add request index to ID
-        args.CP = inputID     # Sneaky way to set current causal pathway from hitlist for validation
+        args.CP = inputID     # Sneaky way to set current causal pathway from hitlist for verification
         test_inputfile(mode, inputID, requestID)
 
 
@@ -475,6 +490,8 @@ def run_requests(behavior, threadIndex, requestID, barrier):
 
     except Exception as e:
         log.critical(f"{e}")
+
+
 
 
 

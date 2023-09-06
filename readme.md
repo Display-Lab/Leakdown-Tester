@@ -84,11 +84,11 @@ Format for the below argument specifications:
 ### Output Verification and Validation arguments
 Note: V&V options are mutually exclusive, only one kind of operation can be performed during an LDT run.
 
-`--vignVal`
+`--vignVerify`
 - Default: None 
 - SetTrue: Compares output message keys 'measure' and 'acceptable_by' against vignette-validated key pair dictionary.
 
-`--cpVal`
+`--cpVerify`
 - Default: None 
 - SetTrue: Compares user-input and API-output message keys 'measure' and 'acceptable_by' pairs for a match.
 
