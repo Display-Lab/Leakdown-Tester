@@ -4,10 +4,9 @@ This repository contains the codebase for the Leakdown Tester (LDT) command line
 
 The script is named after a protocol for testing engine blocks, the reverse of a compression test. Pressurized air is introduced to the engine block to check for leaking points - it's a metaphor for how this tool can send large volumes of data to APIs to test for 'leaks'!
 
-As of current date, the tool is focused around testing the [Precision Feedback Pipeline](https://github.com/Display-Lab/precision-feedback-pipeline) repo
- API, but more APIs can be configured as targets in future releases.
+As of current date, the tool is focused around testing the [Precision Feedback Pipeline](https://github.com/Display-Lab/precision-feedback-pipeline) API, but more APIs can be configured as targets in future releases.
 
- If you are new to Leakdown Tester, read the wiki articles [here](https://github.com/Display-Lab/Leakdown-Tester/wiki)
+ If you are new to Leakdown Tester, read the wiki articles [here](https://github.com/Display-Lab/Leakdown-Tester/wiki).
 
 Continue reading for argument and env var details to make use of LDT.
 
@@ -33,6 +32,7 @@ Format for the below argument specifications:
 - Default: 1
 - Number of tests run by the script (per thread).
    + Identical to the number of requests you want the API to recieve, unless multithreading or using a full-repo test.
+
 `--threads` `integer` 
 - Default: 1
 - Number of threads to run concurrent Leakdown Tests on against the same PFP API endpoint.
