@@ -1,4 +1,9 @@
 # Leakdown Tester Changelog
+## Version 1.1.0
+*Released TBD	(indev)*
+**Feature:** Added graphical user interface
+
+
 ## Version 1.0.1
 *Released 9/6/23*
 
