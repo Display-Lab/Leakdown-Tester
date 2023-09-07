@@ -7,7 +7,9 @@ The script is named after a protocol for testing engine blocks, the reverse of a
 As of current date, the tool is focused around testing the [Precision Feedback Pipeline](https://github.com/Display-Lab/precision-feedback-pipeline) repo
  API, but more APIs can be configured as targets in future releases.
 
-Continue reading for details on making use of LDT to test APIs.
+ If you are new to Leakdown Tester, read the wiki articles [here](https://github.com/Display-Lab/Leakdown-Tester/wiki)
+
+Continue reading for argument and env var details to make use of LDT.
 
 # Leakdown Tester User Manual
 Here are listed the currently implemented user commands, environmental variables, and instructions for use.
