@@ -202,31 +202,43 @@ def text_back(postReturn):
     log.info(f"\tComparison Value:\t{messDat.get('comparison_value')}\n")
 
 
-
-## Check output message for known-good metadata pairs...
+    
 def response_vign_verify(apiReturn, staffID):
-    log.debug("\tRunning 'response_vign_verify..")
+    log.debug("\tRunning 'response_vign_verify'...")
     validKeys = vignAccPairs.get(staffID)
-    chosenKeys = {
-        "acceptable_by": apiReturn["selected_candidate"].get("acceptable_by").lower(),
-        "measure": apiReturn["selected_candidate"].get("measure")
-    }
+    selectedCPs = apiReturn["selected_candidate"].get("acceptable_by")
+    selectedMeasure = apiReturn["selected_candidate"].get("measure")
+    matchingCP = False
+    matchingMeasure = False
+    formattedValidKeys = [      # Make print statement pretty for valid pairs
+        f"\t{item['acceptable_by'].title()}\t\t{item['measure']}" for item in validKeys
+    ]
     
-    # Make validKeys into a more readable format for printing
-    formattedValidKeys = [f"\t{item['acceptable_by'].title()}\t\t{item['measure']}" for item in validKeys]
+    if not selectedCPs or not selectedMeasure:
+        log.warning("Selected candidate is missing 'acceptable_by' or 'measure'.")
+        return
     
-    # Check keys and print results
-    if chosenKeys in validKeys:
-        log.info(f"VIGNETTE VERIFICATION:\tPASS\nValid pairs:")
-        for formattedValidKey in formattedValidKeys:
-            log.info(f"\t{formattedValidKey}")
-        log.info(f"API returned pair:\n\t\t{chosenKeys['acceptable_by'].title()}\t\t{chosenKeys['measure']}\n")
+    # Check if any of the selected CPs match the valid CPs
+    for selectedCP in selectedCPs:
+        selectedCP = selectedCP.lower()
+        for validKey in validKeys:
+            if (
+                selectedCP == validKey["acceptable_by"].lower()
+                and selectedMeasure == validKey["measure"]
+            ):
+                matchingCP = selectedCP
+                matchingMeasure = selectedMeasure
+                break
+    
+    if matchingCP and matchingMeasure:
+        log.info("\nVIGNETTE VERIFICATION:\t\tPASS")
+        log.info(f"Matched pair:\t\t{matchingCP.title()}\t\t{matchingMeasure}")
     else:
-        log.info(f"VIGNETTE VERIFICATION:\tFAIL\nExpected valid pairs:")
+        log.info("\nVIGNETTE VERIFICATION:\t\tFAIL")
         for formattedValidKey in formattedValidKeys:
-            log.info(f"\t{formattedValidKey}")
-        log.info(f"API returned pair:\n\t\t{chosenKeys['acceptable_by'].title()}\t\t{chosenKeys['measure']}\n")
-
+            log.info(f"Expected pairs:\t{formattedValidKey}")
+        log.info(f"API returned pair:\n\t\t{selectedCPs}\t\t{selectedMeasure}")
+    log.info(f"Text:\t{apiReturn['Message'].get('text_message')[:55]}\n")
 
 
 
@@ -234,7 +246,7 @@ def response_vign_verify(apiReturn, staffID):
 def response_CP_verify(apiReturn, causalPathway):
     log.debug("\tRunning 'response_CP_verify'...")
     try:
-        assert causalPathway is not None and isinstance(causalPathway, str), "Causal Pathway passed to verification function is not a valid string"
+        assert causalPathway is not None and isinstance(causalPathway, str), "Causal Pathway passed is not a valid string"
         assert apiReturn["selected_candidate"].get("acceptable_by") is not None, "No 'Acceptable By' keys returned by API"
     except AssertionError as e:
         log.critical("Assertion error: " + str(e))
@@ -253,6 +265,7 @@ def response_CP_verify(apiReturn, causalPathway):
         else:
             log.info(f"CAUSAL PATHWAY VERIFICATION:\tFAIL\n\t\tSpecified Pathway:\t{causalPathway}\n\t\tAccepted Pathway:\t{selectedCPList}")
             log.info(f"No matching causal pathway found for '{causalPathway}'.\n")
+
 
 
 ## Save PFP API responses for manual review...

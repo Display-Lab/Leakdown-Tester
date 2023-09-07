@@ -1,12 +1,18 @@
 # Leakdown Tester Changelog
 ## Version 1.0.1
-*Released TBD*
+*Released 9/6/23*
 
 **Patch:** Fixed V&V functions with new structure of 'acceptable_by' key
 - Restored causal pathway verification with `--cpVerify`
 	- Iterates through acceptable_by pathways and searches for a match
-	- *Planned*: Verify against candidate message template links to restore specificity verification
--   
+
+- Restored vignette verification with `--vignVerify`
+	- Searches for matches in message template keys, which correlate 1:1 to causal pathways
+	- Searches for matches in measures chosen to create feedback from
+
+- *Planned:* Verify selected measures by comparing message templates
+	- Currently unnecessary, but may add functionality for further refinement of testing in the future
+
 **Improvement:** *(Documentation only)* Retroactively changed version numbers from V1 to V0 for pre-release versions
 - Updated in GitHub
 - Changelog updated
@@ -14,7 +20,7 @@
 ## Version 1.0.0
 *Released 8/31/2023*
 
- **Versioned:** All releases > 1.6.0 will 'live' in a new, independent repository
+ **Versioned:** All releases > 0.6.0 will 'live' in a new, independent repository
 - Repo is at [Display-lab/Leakdown-Tester](https://github.com/Display-Lab/Leakdown-Tester)
 - Liscensed with GNU General Public Liscense 3.0 (share-alike)
 - Earlier versions can be found in the caches of the [precision-feedback-pipeline](https://github.com/Display-Lab/precision-feedback-pipeline) repo
