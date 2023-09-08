@@ -11,7 +11,7 @@ As of current date, the tool is focused around testing the [Precision Feedback P
 Continue reading for argument and env var details to make use of LDT.
 
 # Leakdown Tester User Manual
-Here are listed the currently implemented user commands, environmental variables, and instructions for use.
+Here are listed the currently implemented user commands, environmental variables, and instructions for use with the LDT Command Line Utility. Using the graphical user interface version will execute these commands from the GUI, so familiarity with them is still helpful for in-depth testing. 
 
 ## Arguments
 Below are the arguments that can be used to run LDT. Initializing with all default values will yield a single post request from CSV file sent to a locally hosted API instance.

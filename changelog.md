@@ -1,4 +1,11 @@
 # Leakdown Tester Changelog
+## Version 1.1.0
+*Released 9/7/23*
+
+**Feature:** Added graphical user interface
+- Can be run by initializing LDT_GUI.py
+- All functionalities tested and operational
+
 ## Version 1.0.1
 *Released 9/6/23*
 

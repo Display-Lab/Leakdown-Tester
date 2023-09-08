@@ -513,7 +513,7 @@ def run_requests(behavior, threadIndex, requestID, barrier):
 ########### Main Script Body ################################
 def main():
     log.debug("\t\t# LDT started #")
-    print(f"\n\t\tWelcome to the Leakdown Tester, Version {ldtVersion}!")
+    log.info(f"\n\t\tWelcome to the Leakdown Tester, Version {ldtVersion}!")
     try:
         behavior = set_behavior()                                   # Set behavior
         calc_total_reqs(behavior)                                   # Calculate request number total
@@ -537,7 +537,7 @@ def main():
             thisThread.join()
 
         log.debug("\t\t# LDT complete #\n\n")
-        print("\n\t\tLeakdown test complete.\n")
+        log.info("\n\t\tLeakdown test complete.\n")
         exit(0)
 
 
