@@ -1,10 +1,16 @@
 # Leakdown Tester Changelog
+## Verrsion 1.1.1-beta
+**Improvement:** Patched target setting dropdown in GUI
+
+**Improvement:** Created and attempted implementation of custom icon files
+- Platform-specific implementation in progress
+
 ## Version 1.1.0
 *Released 9/7/23*
 
 **Feature:** Added graphical user interface
 - Can be run by initializing LDT_GUI.py
-- All functionalities tested and operational
+- Core functions tested operational
 
 ## Version 1.0.1
 *Released 9/6/23*

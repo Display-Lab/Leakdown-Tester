@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import ttk
+from tkinter import PhotoImage
 import sys
 import subprocess
 
@@ -29,6 +31,15 @@ git_link =          None
 def create_main_window():
     root = tk.Tk()
     root.title("Leakdown Tester GUI")
+    
+    icon_png = PhotoImage(file="Assets/icon_1024x1024.png")
+    lin_icon = icon_png.subsample(32)
+    if sys.platform == 'darwin':
+        root.iconbitmap('Assets/LeakdownTester.icns')
+    elif sys.platform == 'linux':
+        root.iconbitmap(lin_icon)
+    elif sys.platform == 'windows':
+        root.iconbitmap('Assets/LeakdownTester.ico')
 
     ## Configure left-side main UI panel:
     left_frame = tk.Frame(root)
@@ -67,7 +78,7 @@ def create_main_window():
     test_type_dropdown.pack()
 
     ## Button to run LDT test
-    run_button = tk.Button(root, text="Run Test", command=lambda: run_test(test_type_var.get()))
+    run_button = tk.Button(left_frame, text="Run Test", command=lambda: run_test(test_type_var.get()))
     run_button.pack()
 
     # Log display section:
@@ -108,7 +119,7 @@ def configure_test(frame, root):
     ## Dropdown menu for selecting API target
     target_label = tk.Label(frame, text="API Target:")
     target_label.pack()
-    targets = ['Local', 'Heroku', 'GCP']
+    targets = ['Local', 'Heroku', 'Cloud']
     target_var = tk.StringVar(root)
     target_var.set(targets[0])  # Set default test to Local API target
     target_dropdown = tk.OptionMenu(frame, target_var, *targets)
@@ -148,6 +159,7 @@ def configure_test(frame, root):
     def save_general_config():
         global target, num_tests, num_threads, respond, debug
         target =        str(target_var.get())
+        target =        target.lower()
         num_tests =     int(test_num_spinbox.get())
         num_threads =   int(thread_spinbox.get())
         respond =       response_var.get()
@@ -328,8 +340,8 @@ def configure_github(frame, root):
     save_button.pack()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Test running control logic, interface GUI with CLI
 def run_test(selected_test_type):
-    # Define the command to run LDT.py based on the selected test type
     cmd = ["python", 'LDT.py']   # Set up initial command to run LDT
 
     if selected_test_type == "CSV":
@@ -355,11 +367,7 @@ def run_test(selected_test_type):
         
     elif selected_test_type == "Custom Github Content":
         cmd.extend(['--useGit', git_link])
-    
-    else:
-        print("Invalid test type selected.")
-        return
-    
+    m    
     if debug:
         cmd.extend(['--debug'])
     
