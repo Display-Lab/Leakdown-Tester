@@ -4,6 +4,7 @@ from tkinter import messagebox
 from tkinter import ttk
 from tkinter import PhotoImage
 import sys
+import os
 import subprocess
 
 
@@ -27,33 +28,54 @@ verify_cp =         False
 
 git_link =          None
 
+## Image pathing and setup
+this_dir = os.path.dirname(__file__)
+icon1024_path = os.path.join(this_dir, "Assets/icon_1024x1024.png")
+icon128_path = os.path.join(this_dir, "Assets/icon_128x128.png")
 
+### Main UI window ###
 def create_main_window():
+    global icon1024_path, icon128_path
     root = tk.Tk()
     root.title("Leakdown Tester GUI")
     
-    icon_png = PhotoImage(file="Assets/icon_1024x1024.png")
-    lin_icon = icon_png.subsample(32)
+    ## Widget styling global options
+    style = ttk.Style()
+    style.configure("label1",
+                foreground="9b9a9c",
+                backgroud ="480e7b",
+                font=("consolas", 12)
+                )
+    # Call photoimage from inside main, avoids tkinter garbage collection errors
+    icon1024 = PhotoImage(file=icon1024_path)
+    lin_icon = icon1024.subsample(32)
+
     if sys.platform == 'darwin':
-        root.iconbitmap('Assets/LeakdownTester.icns')
+        root.iconbitmap('Assets/icon_32x32.png')
     elif sys.platform == 'linux':
         root.iconbitmap(lin_icon)
     elif sys.platform == 'windows':
         root.iconbitmap('Assets/LeakdownTester.ico')
+    
 
-    ## Configure left-side main UI panel:
+    # Create left-side main UI panel
     left_frame = tk.Frame(root)
     left_frame.pack(pady=10, side=tk.LEFT)
 
-    # Create a frame on the right side of the main window for test config settings:
+    # Create right side configuration settings panel
     right_frame = tk.Frame(root)
-    right_frame.pack(pady=10, side=tk.RIGHT)
-    right_placeholder_label = tk.Label(right_frame, text="Ahoy there!")
-    right_placeholder_label.pack()
+    right_frame.pack(pady=10, side=tk.RIGHT)    
     
+    # # # # Left frame UI elements # # # # # # # # # 
+    # LDT icon label
+    icon128 = PhotoImage(file=icon128_path, master=left_frame)
+    icon_label = tk.Label(left_frame, image=icon128)
+    icon_label.image=icon128
+    icon_label.pack(side='top')
 
-    ## Test configuration buttons
-    configure_general_button = tk.Button(left_frame, text="Configure General Settings", command=lambda: configure_test(right_frame, root))
+    # Test configuration buttons
+    configure_general_button = tk.Button(left_frame, text="Configure General Settings",
+                                        command=lambda: configure_test(right_frame, root))
     configure_general_button.pack()
 
     configure_csv_button = tk.Button(left_frame, text="Configure CSV Test", command=lambda: configure_csv(right_frame, root))
@@ -68,24 +90,28 @@ def create_main_window():
     configure_github_button = tk.Button(left_frame, text="Configure Custom GitHub Test", command=lambda: configure_github(right_frame, root))
     configure_github_button.pack()
 
-    ## Dropdown menu to select test behavior type to run
+    # Dropdown menu to select test behavior type to run
     test_type_label = tk.Label(left_frame, text="Test Type to Run:")
     test_type_label.pack()
-    test_types = ["CSV", "Persona", "Causal Pathway", "Custom Github Content"]
+    test_types = ["CSV", "Persona", "Causal Pathway", "Custom Github Content", "Custom JSON Payload"]
     test_type_var = tk.StringVar(root)
-    test_type_var.set(test_types[1])  # Default selection
+    test_type_var.set(test_types[4])  # Default selection is Postwoman
     test_type_dropdown = tk.OptionMenu(left_frame, test_type_var, *test_types)
     test_type_dropdown.pack()
 
-    ## Button to run LDT test
+    # Button to run LDT test
     run_button = tk.Button(left_frame, text="Run Test", command=lambda: run_test(test_type_var.get()))
     run_button.pack()
+
+    # Button to clear text from window
+    clear_button = tk.Button(left_frame, text='Clear window', command=lambda: log_text.delete("1.0", "end"))
+    clear_button.pack()
 
     # Log display section:
     log_text = tk.Text(root, wrap=tk.WORD)
     log_text.pack(fill=tk.BOTH, expand=True)
 
-    # Redirect print and log statements (stdout, stderr) to the Text widget:
+    # Redirect print and log statements (stdout, stderr) to log_text widget
     def redirect_output(output_widget):
         class StdoutRedirector:
             def __init__(self, widget):
@@ -98,6 +124,7 @@ def create_main_window():
         sys.stderr = StdoutRedirector(log_text)
 
     redirect_output(log_text)
+
 
     def on_closing():
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
@@ -343,14 +370,24 @@ def configure_github(frame, root):
 ## Test running control logic, interface GUI with CLI
 def run_test(selected_test_type):
     cmd = ["python", 'LDT.py']   # Set up initial command to run LDT
+    cmd.extend(['--target', str(target)])
+    cmd.extend(['--tests', str(num_tests)])
+    cmd.extend(['--threads', str(num_threads)])
+    if debug:
+        cmd.extend(['--debug'])
+    if respond:
+        cmd.extend(['--respond'])
 
-    if selected_test_type == "CSV":
+    if selected_test_type == "Custom JSON Content":
+        cmd.extend(['--postwoman'])
+
+    elif selected_test_type == "CSV":
         cmd.extend(['--RI', str(initial_row), '--RF', str(final_row)])
         if csv_filepath is not None:
             cmd.extend(['--csv', csv_filepath])
 
     elif selected_test_type == "Persona":
-        if persona == 'All':
+        if persona == 'all':
             cmd.append('--allPersonas')
         else:
             cmd.extend(['--persona', persona])
@@ -367,12 +404,7 @@ def run_test(selected_test_type):
         
     elif selected_test_type == "Custom Github Content":
         cmd.extend(['--useGit', git_link])
-    m    
-    if debug:
-        cmd.extend(['--debug'])
     
-    if respond:
-        cmd.extend(['--respond'])
 
     try:
         # Run the command and capture the output
