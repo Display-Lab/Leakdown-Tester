@@ -16,8 +16,14 @@ Here are listed the currently implemented user commands, environmental variables
 ## Arguments
 Below are the arguments that can be used to run LDT. Initializing with all default values will yield a single post request from CSV file sent to a locally hosted API instance.
 
+First time using LDT? Try the example command below to run a verification test of all personas on the knowledgebase:
+
+```zsh
+python3 LDT.py --vignVerify --allPersonas
+```
+
 ---
-Format for the below argument specifications:
+Format for argument specifications in the section below:
 
 `--argument` `datatype`
 - Default value of `datatype`
