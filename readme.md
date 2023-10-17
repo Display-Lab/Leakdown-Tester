@@ -62,6 +62,11 @@ Format for argument specifications in the section below:
    + Without debug enabled, will only save INFO level logging statements (normal output, essentially).
 
 ### Behavior-setting arguments
+`--useCSV`
+- Default: None
+- SetTrue: Sends performance data JSON payload from CSV file.
+   + Requires CSV configuration settings to be specified by the user in most cases
+
 `--postwoman`
 - Default: None
 - SetTrue: Sends performance data JSON payload from addendum file.
@@ -112,9 +117,13 @@ Options for configuring the JSON payload pulled from a user-specified CSV file.
 - Default: 12
 - Specifies the last row of data to read from CSV file (0 indexed).
 
-`--C`, `integer`
+`--CI`, `integer`
+- Default: 1
+- Specifies the first column (0 indexed) to read from CSV file.
+
+`--CF`, `integer`
 - Default: 10
-- Specifies the number of columns to read from CSV file.
+- Specifies the final column (0 indexed) to read from CSV file.
 
 ### Required file pathing arguments
 `--csv` `string`

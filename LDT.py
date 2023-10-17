@@ -34,6 +34,7 @@ configGroup.add_argument("--saveDebug", action="store_true", help="SetTrue: Writ
 #
 # Behavior-setting arguments
 behaviorGroup = ap.add_mutually_exclusive_group() # Mutually exclude args that set behavior
+behaviorGroup.add_argument("--useCSV", action="store_true", help="SetTrue: Use performance data JSON payload from CSV file.")
 behaviorGroup.add_argument("--postwoman", action="store_true", help="SetTrue: Use performance data JSON payload from addendum file.")
 behaviorGroup.add_argument("--useGit", type=str, default=None, help="Address of GitHub input message file to send pipeline.")
 behaviorGroup.add_argument("--persona", choices=["alice", "bob", "chikondi", "deepa", "eugene", "fahad", "gaile"], help="Select a persona for testing.")
@@ -49,7 +50,8 @@ verificationGroup.add_argument("--cpVerify", action="store_true", help="SetTrue:
 # CSV payload config arguments
 ap.add_argument("--RI", type=int, default=0, help="First row of data to read from CSV.")
 ap.add_argument("--RF", type=int, default=12, help="Last row of data to read from CSV.")
-ap.add_argument("--C", type=int, default=10, help="Number of columns to read.")
+ap.add_argument("--CI", type=int, default=0, help="First column to read from CSV.")
+ap.add_argument("--CF", type=int, default=10, help="Final column to read from CSV.")
 # 
 # Required file pathing (argument specified)
 ap.add_argument("--csv", type=str, default=None, help="CSV filepath; when specified overwrites 'CSVPATH', uses CSV data for JSON payload(s).")
@@ -121,9 +123,9 @@ def set_behavior():
         return "postwoman"
 
     # Set behavior to use CSV content (last priority)
-    elif perfPath != None:
+    elif args.useCSV:
         log.info(f"Reading data from CSV file at '{perfPath}'...")
-        log.info(f"Reading in data with dimensions {args.C} by {args.RF - args.RI}...")
+        log.info(f"Reading in data with dimensions {args.RF - args.RI} by {args.CF - args.CI}...")
         return "CSV"
     
     else:
@@ -347,25 +349,28 @@ def go_fetch(url):
 
 
 
-## Read in CSV data from file, convert to JSON... 
+## Read in CSV data from file, convert to JSON...
 def csv_jsoner(path):
     log.debug("RUNNING FUNCTION: 'csv_jsoner'...")
-    performance = pd.read_csv(path, header=None, usecols = range(args.C), nrows= args.RF-args.RI)
+    # Adjust the 'usecols' parameter to skip the first column
+    performance = pd.read_csv(path, header=None, usecols=range(args.CI, args.CF), skiprows=1, nrows=args.RF - args.RI)
+
     rowsRead, colsRead = performance.shape
-    selectedRows = performance.iloc[args.RI : args.RF]
+    selectedRows = performance.iloc[args.RI: args.RF]
     jsonedData = ""
-    
+
     # Integrated dimension error catcher:
-    if colsRead != args.C or rowsRead != args.RF - args.RI:
-        raise ValueError(f"Expected {args.RF - args.RI} rows and {args.C} columns. Actual data is {rowsRead} rows by {colsRead} columns.")
+    if colsRead != args.CF - args.CI or rowsRead != args.RF - args.RI:
+        raise ValueError(f"Expected {args.RF - args.RI} rows and {args.CF - args.CI} columns. Actual data is {rowsRead} rows by {colsRead} columns.")
 
     # Integrated Dataframe to JSON conversion (V.15)
     for i, row in selectedRows.iterrows():
         currentLine = json.dumps(row.to_list())
         jsonedData += currentLine  # content addition
         if i < len(performance) - 1:
-            jsonedData += ",\n\t"   # formatting
+            jsonedData += ",\n\t"  # formatting
     return jsonedData
+
 
 
 
