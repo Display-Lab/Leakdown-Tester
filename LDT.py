@@ -14,8 +14,10 @@ import logging
 import threading
 from threading import Barrier
 from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman
+from dotenv import load_dotenv
 global pfp, audience, perfPath, servAccPath, chkCP
 
+load_dotenv()
 #### ARGUMENTS ###############################################################################################
 # Initialize argparse, define command-line arguments, create and populate arg groups #
 ap = argparse.ArgumentParser(description="Leakdown Tester Script")
@@ -59,9 +61,9 @@ args = ap.parse_args()      # Parse initialization arguments
 ##### Assign Environmental Variables, ft. overwrite logic where appropriate #########
 pfp         = os.environ.get("PFP")
 audience    = os.environ.get("TARGET_AUDIENCE")
+chkCP       = args.cpVerify if args.CP != None or args.allCPs    else None             # Only allow CP check if testing CPs
 perfPath    = args.csv      if args.csv != None     else    os.environ.get("CSVPATH")  # Path to performance CSV data
 servAccPath = args.servAcc  if args.servAcc != None else    os.environ.get("SAPATH")   # Path to service account file
-chkCP       = args.cpVerify if args.CP != None or args.allCPs    else None             # Only allow CP check if testing CPs
 
 
 #### Logging module configuration ######################################################
@@ -84,7 +86,7 @@ log = logging.getLogger("LeakdownTester")                                  # Sta
 ## Set script behavior for JSON content source (+ error handling and readback)...
 def set_behavior():
     global perfPath
-    log.debug("\tRunning 'set_behavior'...")
+    log.debug("RUNNING FUNCTION: 'set_behavior'...")
     # Error catcher for multiple JSON payload specification
     if perfPath != None and args.useGit != None:
         log.warning("Multiple JSON payloads specified.\tContinuing with GitHub payload...\n")
@@ -133,7 +135,7 @@ def set_behavior():
 ## Configure API endpoint from argument...
 def set_target():
     global pfp, oidcToken
-    log.debug("\tRunning 'set_target'...")    
+    log.debug("RUNNING FUNCTION: 'set_target'...")    
     
     # Local API target:
     if args.target == "local":
@@ -147,12 +149,16 @@ def set_target():
     elif args.target == "cloud":
         assert audience, "Target Audience not set. Exiting..."
         assert servAccPath, "Service Account Path not set. Exiting..."
+        
 
         pfp = "https://pfp.test.app.med.umich.edu/createprecisionfeedback/"
         oidcToken = service_account.IDTokenCredentials.from_service_account_file(
         servAccPath,
         target_audience = audience,
         )
+        log.debug(f"Debug statements for GCP connection setup:\nTarget Audience:\n{audience}")
+        log.debug(f"Service Account Path:\n{servAccPath}")
+        log.debug(f"OIDCToken:{oidcToken}")
     
     else:
         log.warning("Target not declared. Continuing with local PFP target.")
@@ -164,7 +170,7 @@ def set_target():
 
 ## Calculate total number of POST requests script will try to send...
 def calc_total_reqs(behavior):
-    log.debug("\tRunning 'calc_total_reqs'...")
+    log.debug("RUNNING FUNCTION: 'calc_total_reqs'...")
     if behavior == "allPers":
         totalRequests = len(hitlistIM) * args.tests * args.threads
     if behavior == "allCPs":
@@ -185,7 +191,7 @@ def calc_total_reqs(behavior):
 
 ## Print relevant JSON keys from API response...
 def text_back(postReturn):
-    log.debug("\tRunning 'text_back'...")
+    log.debug("RUNNING FUNCTION: 'text_back'...")
     assert "staff_number" in postReturn, "Key 'staff_number' not found in post response."
     assert "selected_candidate" in postReturn, "Key 'selected_candidate' not found in post response."
     assert "Message" in postReturn, "Key 'Message' not found in post response." 
@@ -204,7 +210,7 @@ def text_back(postReturn):
 
     
 def response_vign_verify(apiReturn, staffID):
-    log.debug("\tRunning 'response_vign_verify'...")
+    log.debug("RUNNING FUNCTION: 'response_vign_verify'...")
     validKeys = vignAccPairs.get(staffID)
     selectedCPs = apiReturn["selected_candidate"].get("acceptable_by")
     selectedMeasure = apiReturn["selected_candidate"].get("measure")
@@ -244,7 +250,7 @@ def response_vign_verify(apiReturn, staffID):
 
 ## Check output message against requested Causal Pathway...
 def response_CP_verify(apiReturn, causalPathway):
-    log.debug("\tRunning 'response_CP_verify'...")
+    log.debug("RUNNING FUNCTION: 'response_CP_verify'...")
     try:
         assert causalPathway is not None and isinstance(causalPathway, str), "Causal Pathway passed is not a valid string"
         assert apiReturn["selected_candidate"].get("acceptable_by") is not None, "No 'Acceptable By' keys returned by API"
@@ -270,8 +276,8 @@ def response_CP_verify(apiReturn, causalPathway):
 
 ## Save PFP API responses for manual review...
 def save_API_resp(postReturn, requestID):
-    log.debug("\tRunning 'save_API_resp'...")
-    folderName = "API Response Logs"
+    log.debug("RUNNING FUNCTION: 'save_API_resp'...")
+    folderName = "APIResponseLogs"
     os.makedirs(folderName, exist_ok=True)
 
     texName = os.path.join(folderName, f"response_{requestID.lower()}.json")
@@ -290,12 +296,12 @@ def save_API_resp(postReturn, requestID):
 
 ## Handle API responses (print resp, check response keys, save logs)...
 def handle_response(response, requestID):
-    log.debug("\tRunning 'handle_response'...")
+    log.debug("RUNNING FUNCTION: 'handle_response'...")
+    log.debug(f"Response Content: {response.content}")
     if response.status_code == 200:
         log.info(f"{requestID}:\tResponse recieved in {response.elapsed.total_seconds():.3f} seconds.")
         apiReturn = response.json()
         staffID = apiReturn["staff_number"]
-        #print(apiReturn)
         
         if args.respond:    # Print output if asked
             text_back(apiReturn)
@@ -324,7 +330,7 @@ def handle_response(response, requestID):
 
 ## Fetch JSON content from GitHub... (V9)
 def go_fetch(url):
-    log.debug("\tRunning 'go_fetch'...")
+    log.debug("RUNNING FUNCTION: 'go_fetch'...")
     if "github.com" in url:
         url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob", "")
     header = {"Accept": "application/vnd.github.v3.raw"} # tell gitHub to send as raw, uncompressed
@@ -341,9 +347,9 @@ def go_fetch(url):
 
 
 
-## Read in CSV data from file, convert to JSON...
+## Read in CSV data from file, convert to JSON... 
 def csv_jsoner(path):
-    log.debug("\tRunning 'csv_jsoner'...")
+    log.debug("RUNNING FUNCTION: 'csv_jsoner'...")
     performance = pd.read_csv(path, header=None, usecols = range(args.C), nrows= args.RF-args.RI)
     rowsRead, colsRead = performance.shape
     selectedRows = performance.iloc[args.RI : args.RF]
@@ -371,7 +377,7 @@ def csv_jsoner(path):
 
 ## Send POST request to unprotected URLs...
 def send_post(pfp, fullMessage):
-    log.debug("\tRunning 'send_unprotected_post'...")
+    log.debug("RUNNING FUNCTION: 'send_unprotected_post'...")
     header = {"Content-Type": "application/json"}
     response = requests.post(pfp, data=fullMessage, headers=header)
     return response
@@ -380,7 +386,7 @@ def send_post(pfp, fullMessage):
 
 ## Send POST request to IAP protected URLs...
 def send_iap_post(url, fullMessage, method="POST"):
-    log.debug("\tRunning 'send_iap_post'...")
+    log.debug("RUNNING FUNCTION:  'send_iap_post'...")
    
     # Check if token valid, refresh expired token if not
     if oidcToken.valid != True:
@@ -390,10 +396,14 @@ def send_iap_post(url, fullMessage, method="POST"):
     # Fetch IAP-protected URL, auth header 'Bearer', and OpenID Connect token
     fullMessage=json.loads(fullMessage)
     resp = requests.post(
-        url,
-        headers={"Authorization": "Bearer {}".format(oidcToken.token)},
-        json=fullMessage,
+    url,
+    headers={
+        "Authorization": "Bearer {}".format(oidcToken.token),
+        "Content-Type": "application/json",  # Set content-type to JSON
+    },
+    json=fullMessage,
     )
+    log.debug(f"bearer Token:\n{oidcToken.token}")
     return resp
 
 
@@ -401,7 +411,7 @@ def send_iap_post(url, fullMessage, method="POST"):
 ## Send POST request (IAP or Unprotected), then handle response...
 def post_and_respond(fullMessage, requestID):
     global pfp
-    log.debug("\tRunning 'post_and_respond'...")
+    log.debug("RUNNING FUNCTION: 'post_and_respond'...")
     try:
         if args.target != "cloud":
             sentPost = send_post(pfp, fullMessage)
@@ -418,7 +428,7 @@ def post_and_respond(fullMessage, requestID):
 
 ## Test a knowledgebase repo input message JSON file...
 def test_inputfile(mode, inputID, requestID):
-    log.debug("\tRunning 'test_inputfile'...")
+    log.debug("RUNNING FUNCTION: 'test_inputfile'...")
     try:
         if mode == "testIMs":   # Check if testing official persona input messages
             url = f"https://raw.githubusercontent.com/Display-Lab/knowledge-base/main/vignettes/personas/{inputID}/input_message.json"
@@ -439,7 +449,7 @@ def test_inputfile(mode, inputID, requestID):
 
 ## Automated full repo testing of all knowledgebase files...
 def repo_test(mode, threadIndex, testIndex, requestID):
-    log.debug("\tRunning 'repo_test'...")
+    log.debug("RUNNING FUNCTION: 'repo_test'...")
     if mode == "testIMs":   # Run when testing persona input messages
         hitlist = hitlistIM
     elif mode == "testCPs": # Run when testing causal pathway input messages
@@ -455,7 +465,7 @@ def repo_test(mode, threadIndex, testIndex, requestID):
 ## Run POST requests while tracking thread number...
 ## Handles logic previously assigned to main script body
 def run_requests(behavior, threadIndex, requestID, barrier): 
-    log.debug("\tRunning 'run_requests'...")
+    log.debug("RUNNING FUNCTION: 'run_requests'...")
     barrier.wait()  # Wait at barrier for all threads to be up
     try:
         for testIndex in range(args.tests):   # iterate through requested tests

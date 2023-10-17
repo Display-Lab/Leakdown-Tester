@@ -1,10 +1,32 @@
 # Leakdown Tester Changelog
+## Version 1.1.1
+*Released 10/17/23*
+**Improvement:** Add dotenv support for environmental variable declaration
+
+**Improvement:** Changed format of debug logging statements for better readability
+
+**Improvement:** Created custom visual assets, implemented icon files where possible/stable
+
+**Improvement:** Visual improvements 
+- Changed widgets from using basic tk to ttk versions
+- Rewrote button, optionmenu, label, and spinbox widgets to use theme inclusive TTK package
+- Rewrote packing of all widgets throughout codebase to make more visually appealing
+	- May consider grid system instead of packing if further visual elements are needed/required
+- Implemented styles in labels and buttons
+
+**Patch:** Repaired GCP authentication functionality
+- Verified that bearer token generates and is valid
+- Added bearer token readback (debug mode only) when IAP request sent 
+
+**Patch:** Target-setting dropdown in GUI now functions as intended
+
+
 ## Version 1.1.0
 *Released 9/7/23*
 
-**Feature:** Added graphical user interface
+**Feature:** Added graphical user interface (tkinter build)
 - Can be run by initializing LDT_GUI.py
-- All functionalities tested and operational
+- Core functions tested operational
 
 ## Version 1.0.1
 *Released 9/6/23*
