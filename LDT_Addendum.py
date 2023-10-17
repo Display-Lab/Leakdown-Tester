@@ -1,5 +1,5 @@
 ## Version of the Leakdown Tester
-ldtVersion = "1.1.1"
+ldtVersion = "1.1.2"
 
 
 ## JSON content 'header' wrapper section for in-situ payload compilation:

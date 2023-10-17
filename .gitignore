@@ -2,3 +2,12 @@ LDTvenv/
 venv/
 *.pyc
 .DS_Store
+.env
+service_account.json
+API_Response_Logs
+__pycache__
+
+
+CSV_files
+restrictor.py
+restrictor2.py

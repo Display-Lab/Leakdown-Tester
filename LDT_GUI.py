@@ -66,7 +66,7 @@ def create_main_window():
 
     # Platform specific icon setting; WIP
     if sys.platform == 'darwin':
-        root.iconbitmap('Assets/icon_16x16.png')
+        root.iconbitmap('Assets/LeakdownTester.icns')
     elif sys.platform == 'linux':
         root.iconbitmap(lin_icon)
     elif sys.platform == 'windows':
@@ -388,7 +388,6 @@ def configure_github(frame, root, this_button):
         this_button.configure(style='main.TButton')       # revert button state
 
     ttk.Button(frame, text="Save Configuration", command=save_git_config).pack(anchor=tk.S, pady=20)
-
 
 # Clear any configuration widgets from a frame
 def clean_slate(frame):
