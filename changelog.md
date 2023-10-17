@@ -1,15 +1,7 @@
 # Leakdown Tester Changelog
-## Version 1.1.2
-**Improvement:** Add dotenv support for environmental variable declaration
-
-**Patch:** Repaired GCP authentication functionality
-- Verified that bearer token generates and is valid
-- Added bearer token readback (debug mode only) when IAP request sent 
-
-
 ## Version 1.1.1
-*Released 9/XX/23*
-**Patch:** Target-setting dropdown in GUI now functions as intended
+*Released 10/17/23*
+**Improvement:** Add dotenv support for environmental variable declaration
 
 **Improvement:** Changed format of debug logging statements for better readability
 
@@ -22,11 +14,11 @@
 	- May consider grid system instead of packing if further visual elements are needed/required
 - Implemented styles in labels and buttons
 
-***WIP:***
-- Working on getting enable/disable set up for run button
-- Tried out an indeterminant loading bar to show user that subprocess is running (not a crash), didn't get working
-- Thinking about instead creating an old-school indicator light when running
-- Implemented running subprocess in synchronous thread
+**Patch:** Repaired GCP authentication functionality
+- Verified that bearer token generates and is valid
+- Added bearer token readback (debug mode only) when IAP request sent 
+
+**Patch:** Target-setting dropdown in GUI now functions as intended
 
 
 ## Version 1.1.0

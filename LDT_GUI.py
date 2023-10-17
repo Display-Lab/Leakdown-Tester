@@ -127,7 +127,7 @@ def create_main_window():
     clear_button = ttk.Button(left_frame, text='Clear window', command=lambda: log_text.delete("1.0", "end"))
     
 
-    ## Pack widgets in order and configure spacing
+    ## Pack widgets in order and configure spacing 
     icon_label.pack(anchor = tk.N)
     configure_general_button.pack(pady=15)
     ttk.Separator(left_frame, orient="horizontal").pack(fill='x', pady=8)
