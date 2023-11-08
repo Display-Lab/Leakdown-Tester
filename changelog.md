@@ -1,7 +1,10 @@
 # Leakdown Tester Changelog
 ## Version 1.2.0
-*Released ...*
-**Changed:** Autoverification minor tweaks to handle the new output formatting after pictoralist rework (--vignVerify)
+*Released 11/8/23*
+**Changed:** Autoverification minor tweaks to handle the new output formatting after pictoralist rework (--vignVerify)  
+**Added:** --pilotVerify to verify tests with the restricted pilot launch dataset  
+- added pilotPairs dict to store pairs of causal pathways and measures (tweaks likely needed)
+- added documentation
 
 ## Version 1.1.2
 *Released 10/17/23*

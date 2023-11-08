@@ -103,14 +103,51 @@ vignAccPairs = {
     6: [
         {"acceptable_by": "social gain", "measure": "PUL01"},
         {"acceptable_by": "worsening", "measure": "SUS02"},
-        {"acceptable_by": "goal loss", "measure": "NMB03Peds"}
+        {"acceptable_by": "goal loss", "measure": "NMB03"}
     ],
     7: [
         {"acceptable_by": "social better", "measure": "SUS04"},
         {"acceptable_by": "improving", "measure": "BP03"},
         {"acceptable_by": "worsening", "measure": "SUS02"},
-        {"acceptable_by": "goal loss", "measure": "NMB03Peds"},
+        {"acceptable_by": "goal loss", "measure": "NMB03"},
         {"acceptable_by": "goal gain", "measure": "TOC01"}
+    ]
+}
+
+pilotPairs = {
+    1: [
+        {"acceptable_by": "social worse", "measure": "PONV05"}, # to 75th
+        {"acceptable_by": "social better", "measure": "SUS04"}, # to 90th
+        {"acceptable_by": "social worse", "measure": "GLU03"}   # to 50th
+    ],
+    2: [
+        {"acceptable_by": "social worse", "measure": "PONV05"}, # to 50th
+        {"acceptable_by": "social worse", "measure": "TOC02"}   # to 75th
+    ],
+    3: [
+        {"acceptable_by": "social better", "measure": "PUL01"}, # to 75th
+        {"acceptable_by": "social worse", "measure": "GLU03"}   # to 75th
+    ],
+    4: [
+        {"acceptable_by": "social worse", "measure": "GLU01"},  # to 90th
+        {"acceptable_by": "social worse", "measure": "TOC02"},  # to 90th
+        {"acceptable_by": "social better", "measure": "BP03"}   # to 75th
+    ],
+    5: [
+        {"acceptable_by": "social worse", "measure": "GLU01"},  # to 50th
+        {"acceptable_by": "social better", "measure": "TOC01"}  # to 75th
+    ],
+    6: [
+        {"acceptable_by": "social better", "measure": "PUL01"}, # to 90th
+        {"acceptable_by": "social better", "measure": "SUS02"}, # to 75th
+        {"acceptable_by": "social worse", "measure": "NMB03"}   # to 50th
+    ],
+    7: [
+        {"acceptable_by": "social better", "measure": "SUS04"}, # to 50th
+        {"acceptable_by": "social better", "measure": "BP03"},  # to 75th
+        {"acceptable_by": "social worse", "measure": "SUS02"},  # to 50th
+        {"acceptable_by": "social worse", "measure": "NMB03"},  # to 50th
+        {"acceptable_by": "social worse", "measure": "TOC01"}   # to 90th
     ]
 }
 

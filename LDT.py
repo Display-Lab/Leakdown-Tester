@@ -13,7 +13,7 @@ import base64
 import logging
 import threading
 from threading import Barrier
-from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman
+from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman, pilotPairs
 from dotenv import load_dotenv
 global pfp, audience, perfPath, servAccPath, chkCP
 
@@ -45,6 +45,7 @@ behaviorGroup.add_argument("--allCPs", action="store_true", help="SetTrue: Test 
 #  Output V&V arguments
 verificationGroup = ap.add_mutually_exclusive_group() # Mutually exclude V&V operations
 verificationGroup.add_argument("--vignVerify", action="store_true", help="SetTrue: Compare output message keys against vignette data library.")
+verificationGroup.add_argument("--pilotVerify", action="store_true", help="SetTrue: Compare output message keys against pilot's restricted vignette data library.")
 verificationGroup.add_argument("--cpVerify", action="store_true", help="SetTrue: Compare input and output causal pathway for match.")
 #
 # CSV payload config arguments
@@ -217,7 +218,11 @@ def text_back(postReturn):
 def response_vign_verify(apiReturn, staffID):
     log.debug("RUNNING FUNCTION: 'response_vign_verify'...")
     # Set up variables to parse through
-    validKeys = vignAccPairs.get(staffID)
+    if args.pilotVerify:
+        log.info(f"Verifying against restricted pilot launch dataset")
+        validKeys = pilotPairs.get(staffID)
+    else:
+        validKeys = vignAccPairs.get(staffID)
     selectedCPs = apiReturn["selected_candidate"].get("acceptable_by")
     selectedMeasure = apiReturn["selected_candidate"].get("measure")
     matchingCP = False
@@ -244,10 +249,10 @@ def response_vign_verify(apiReturn, staffID):
     
     # Report results of verification
     if matchingCP and matchingMeasure:
-        log.info("\nVIGNETTE VERIFICATION:\t\tPASS")
+        log.info("VIGNETTE VERIFICATION:\t\tPASS")
         log.info(f"Matched pair:\t\t{matchingCP.title()}\t\t{matchingMeasure}")
     else:
-        log.info("\nVIGNETTE VERIFICATION:\t\tFAIL")
+        log.info("VIGNETTE VERIFICATION:\t\tFAIL")
         for formattedValidKey in formattedValidKeys:
             log.info(f"Expected pairs:\t{formattedValidKey}")
         log.info(f"API returned pair:\n\t\t{selectedCPs}\t\t{selectedMeasure}")
@@ -305,14 +310,14 @@ def handle_response(response, requestID):
     log.debug("RUNNING FUNCTION: 'handle_response'...")
     log.debug(f"Response Content: {response.content}")
     if response.status_code == 200:
-        log.info(f"{requestID}:\tResponse recieved in {response.elapsed.total_seconds():.3f} seconds.")
+        log.info(f"{requestID}:\tResponse received in {response.elapsed.total_seconds():.3f} seconds.")
         apiReturn = response.json()
         staffID = apiReturn["staff_number"]
         
         if args.respond:    # Print output if asked
             text_back(apiReturn)
 
-        if args.vignVerify:    # Validate vignette measure/causal pathway pair in output if asked
+        if args.vignVerify or args.pilotVerify:    # Validate vignette measure/causal pathway pair in output if asked
             response_vign_verify(apiReturn, staffID)
 
         if chkCP:       # Validate causal pathway output if asked
@@ -441,7 +446,7 @@ def test_inputfile(mode, inputID, requestID):
     try:
         if mode == "testIMs":   # Check if testing official persona input messages
             url = f"https://raw.githubusercontent.com/Display-Lab/knowledge-base/main/vignettes/personas/{inputID}/input_message.json"
-            log.info(f"Testing input_message file for persona '{inputID.upper()}'")
+            log.info(f"\nTesting input_message file for persona '{inputID.upper()}'")
 
         elif mode == "testCPs": # Check if testing causal pathway suite input messages
             url = f"https://github.com/Display-Lab/knowledge-base/blob/main/vignettes/dev_templates/causal_pathway_test_suite/{inputID}_cptest.json"

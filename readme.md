@@ -19,7 +19,7 @@ Below are the arguments that can be used to run LDT. Initializing with all defau
 First time using LDT? Try the example command below to run a verification test of all personas on the knowledgebase:
 
 ```zsh
-python3 LDT.py --vignVerify --allPersonas
+python3 LDT.py --pilotVerify --allPersonas
 ```
 
 ---
@@ -62,45 +62,49 @@ Format for argument specifications in the section below:
    + Without debug enabled, will only save INFO level logging statements (normal output, essentially).
 
 ### Behavior-setting arguments
-`--useCSV`
+`--useCSV`  
 - Default: None
 - SetTrue: Sends performance data JSON payload from CSV file.
    + Requires CSV configuration settings to be specified by the user in most cases
 
-`--postwoman`
+`--postwoman`  
 - Default: None
 - SetTrue: Sends performance data JSON payload from addendum file.
    + Name references the Postman API which is a solid API testing standalone service with extensive features. The major advantage for PFP testing is the ability to rapidly configure and test individual POST requests, which postwoman can also accomplish with the proper IDE setup.
 
-`--useGit` `string`
+`--useGit` `string`  
 - Default: None
 - Connects to an input message source at GitHub.com to send the target API.
 - Use a string argument with a github URL in quotes.
 
-`--persona` `string`
+`--persona` `string`  
 - Default: None
 - String choices are "alice", "bob", "chikondi", "deepa", "eugene", "fahad", "gaile". Quotes are optional.
 - Selects a persona's input_message.json file to send the API as JSON content for a POST request.
 
-`--allPersonas`
+`--allPersonas`  
 - Default: None
 - SetTrue: Sends all knowledgebase persona input message files as JSON content for POST requests to the target API.
 
-`--CP` `string`
+`--CP` `string`  
 - Default: None
 - String choices are "goal_approach", "goal_gain", "goal_loss", "improving", "social_approach", "social_better", "social_gain", "social_loss", "social_worse","worsening", and "all".
 - Selects a causal-pathway-based input message JSON file to send the target API for testing.
 
-`--allCPs`
+`--allCPs`  
 - Default: None
 - SetTrue: Tests all causal-pathway-specific input message files, excepting `all_cptest.json`.
 
 ### Output Verification and Validation arguments
 Note: V&V options are mutually exclusive, only one kind of operation can be performed during an LDT run.
 
-`--vignVerify`
+`--vignVerify`  
 - Default: None 
 - SetTrue: Compares output message keys 'measure' and 'acceptable_by' against vignette-validated key pair dictionary.
+
+`--pilotVerify`  
+- Default: None 
+- SetTrue: Compares output message keys 'measure' and 'acceptable_by' against pilot specific expected outcomes in a validated key pair dictionary (pilotPairs).
 
 `--cpVerify`
 - Default: None 
@@ -109,38 +113,38 @@ Note: V&V options are mutually exclusive, only one kind of operation can be perf
 ### CSV mode-specific payload config arguments
 Options for configuring the JSON payload pulled from a user-specified CSV file.
 
-`--RI` `integer`
+`--RI` `integer`  
 - Default: 0
 - Specifies the first row of data to read from CSV file (0 indexed).
 
-`--RF` `integer`
+`--RF` `integer`  
 - Default: 12
 - Specifies the last row of data to read from CSV file (0 indexed).
 
-`--CI`, `integer`
+`--CI`, `integer`  
 - Default: 1
 - Specifies the first column (0 indexed) to read from CSV file.
 
-`--CF`, `integer`
+`--CF`, `integer`  
 - Default: 10
 - Specifies the final column (0 indexed) to read from CSV file.
 
 ### Required file pathing arguments
-`--csv` `string`
+`--csv` `string`  
 - Default: None
 - Enter the filepath to the CSV file used to read from for JSON payload information.
 - When specified, overwrites 'CSVPATH' environmental variable.
 
-`--servAcc` `string`
+`--servAcc` `string`  
 - Default: None
 - Enter the filepath to the Service Account file used to read from for OAuth2.0 authenticating POST requests to IAP-protected APIs.
 - When specified, overwrites 'SAPATH' environmental variable.
 
 ## Environmental Variables
-1) `CSVPATH` - Filepath to a local CSV file.
+1) `CSVPATH` - Filepath to a local CSV file.  
 - The script checks for this on startup, as JSON content to send as a POST request is currently required. You can specify this filepath with the csv argument, or you can set the env var and specify a different filepath with the csv argument which will override the environment variable. A filepath must be specified if not using the `useGit` argument.
 
-2) `PFP` - URL of the PFP API endpoint where the POST requests are sent.
+2) `PFP` - URL of the PFP API endpoint where the POST requests are sent.  
 - It is likely faster to use the `--target` argument to set the API endpoint rather than to set the environment variable here, however both methods are implemented. Use what works for you.
 
 3) `TARGET_AUDIENCE` - Variable which contains the "target audience" part of the authentication process for connecting with the GCP PFP API. 
