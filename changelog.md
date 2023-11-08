@@ -1,4 +1,20 @@
 # Leakdown Tester Changelog
+## Version 1.2.0
+*Released 11/8/23*
+**Changed:** Autoverification minor tweaks to handle the new output formatting after pictoralist rework (--vignVerify)  
+**Added:** --pilotVerify to verify tests with the restricted pilot launch dataset  
+- added pilotPairs dict to store pairs of causal pathways and measures (tweaks likely needed)
+- added documentation
+
+## Version 1.1.2
+*Released 10/17/23*
+**Improvement:** Updated CSV infrastructure for easier use to support MPOG data flow testing
+- Added argument "useCSV" to mandate pipeline use data from a CSV file (previously only used in-lieu of other sources)
+- Made change to CSV reading function(s) "csv_jsoner"
+	- Added argument for user to specify 0 indexed first column (bypass need to process group number column)
+- Changed argument "C", split to args "CI" and "CF"
+	- Allows user to specify the correct range of data to read in from CSV more accurately
+
 ## Version 1.1.1
 *Released 10/17/23*
 **Improvement:** Add dotenv support for environmental variable declaration

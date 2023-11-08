@@ -13,7 +13,7 @@ import base64
 import logging
 import threading
 from threading import Barrier
-from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman
+from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman, pilotPairs
 from dotenv import load_dotenv
 global pfp, audience, perfPath, servAccPath, chkCP
 
@@ -34,6 +34,7 @@ configGroup.add_argument("--saveDebug", action="store_true", help="SetTrue: Writ
 #
 # Behavior-setting arguments
 behaviorGroup = ap.add_mutually_exclusive_group() # Mutually exclude args that set behavior
+behaviorGroup.add_argument("--useCSV", action="store_true", help="SetTrue: Use performance data JSON payload from CSV file.")
 behaviorGroup.add_argument("--postwoman", action="store_true", help="SetTrue: Use performance data JSON payload from addendum file.")
 behaviorGroup.add_argument("--useGit", type=str, default=None, help="Address of GitHub input message file to send pipeline.")
 behaviorGroup.add_argument("--persona", choices=["alice", "bob", "chikondi", "deepa", "eugene", "fahad", "gaile"], help="Select a persona for testing.")
@@ -44,12 +45,14 @@ behaviorGroup.add_argument("--allCPs", action="store_true", help="SetTrue: Test 
 #  Output V&V arguments
 verificationGroup = ap.add_mutually_exclusive_group() # Mutually exclude V&V operations
 verificationGroup.add_argument("--vignVerify", action="store_true", help="SetTrue: Compare output message keys against vignette data library.")
+verificationGroup.add_argument("--pilotVerify", action="store_true", help="SetTrue: Compare output message keys against pilot's restricted vignette data library.")
 verificationGroup.add_argument("--cpVerify", action="store_true", help="SetTrue: Compare input and output causal pathway for match.")
 #
 # CSV payload config arguments
 ap.add_argument("--RI", type=int, default=0, help="First row of data to read from CSV.")
 ap.add_argument("--RF", type=int, default=12, help="Last row of data to read from CSV.")
-ap.add_argument("--C", type=int, default=10, help="Number of columns to read.")
+ap.add_argument("--CI", type=int, default=0, help="First column to read from CSV.")
+ap.add_argument("--CF", type=int, default=10, help="Final column to read from CSV.")
 # 
 # Required file pathing (argument specified)
 ap.add_argument("--csv", type=str, default=None, help="CSV filepath; when specified overwrites 'CSVPATH', uses CSV data for JSON payload(s).")
@@ -98,22 +101,22 @@ def set_behavior():
     
     # Set behavior to run single persona test (2nd)
     elif args.persona != None:
-        log.info("Reading one persona's JSON file from 'Personas' folder...")
+        log.info("Reading one persona's JSON file from remote 'Personas' folder...")
         return "onePers"
     
     # Set behavior to run all persona tests (3rd)
     elif args.allPersonas:          
-        log.info("Reading all JSON files from 'Personas' folder...")
+        log.info("Reading all JSON files from remote 'Personas' folder...")
         return "allPers"
 
    # Set behavior to run single causal pathway test (4th)
     elif args.CP !=  None:          
-        log.info("Reading one JSON file from 'Causal Pathway Test Suite'...")
+        log.info("Reading one JSON file from remote 'Causal Pathway Test Suite'...")
         return "oneCP"
 
    # Set behavior to run all causal pathway tests (5th)
     elif args.allCPs:          
-        log.info("Reading all JSON files from 'Causal Pathway Test Suite'...")
+        log.info("Reading all JSON files from remote 'Causal Pathway Test Suite'...")
         return "allCPs"
 
     elif args.postwoman:
@@ -121,9 +124,9 @@ def set_behavior():
         return "postwoman"
 
     # Set behavior to use CSV content (last priority)
-    elif perfPath != None:
+    elif args.useCSV:
         log.info(f"Reading data from CSV file at '{perfPath}'...")
-        log.info(f"Reading in data with dimensions {args.C} by {args.RF - args.RI}...")
+        log.info(f"Reading in data with dimensions {args.RF - args.RI} by {args.CF - args.CI}...")
         return "CSV"
     
     else:
@@ -194,24 +197,32 @@ def text_back(postReturn):
     log.debug("RUNNING FUNCTION: 'text_back'...")
     assert "staff_number" in postReturn, "Key 'staff_number' not found in post response."
     assert "selected_candidate" in postReturn, "Key 'selected_candidate' not found in post response."
-    assert "Message" in postReturn, "Key 'Message' not found in post response." 
+    assert "message" in postReturn, "Key 'message' not found in post response." 
     
     selCan = postReturn["selected_candidate"]
-    messDat = postReturn["Message"]
+    messDat = postReturn["message"]
 
     log.info("API response contains keys:")
     log.info(f"\tStaff ID Number:\t{postReturn['staff_number']}")
     log.info(f"\tDisplay Type:\t\t{selCan.get('display')}")
+    log.info(f"\tImage Extant:\t\t{bool(messDat.get('image'))}")
     log.info(f"\tMeasure:\t\t{selCan.get('measure')}")
     log.info(f"\tAcceptable By:\t\t{selCan.get('acceptable_by')}")
-    log.info(f"\tAbbreviated Message:\t{messDat.get('text_message')[:85]}")
-    log.info(f"\tComparison Value:\t{messDat.get('comparison_value')}\n")
+    #log.info(f"\tAbbreviated Message:\t{messDat.get('text_message')[:85]}\n")
+    log.info(f"\tShort Message:\t{messDat.get('text_message')}\n")
+    #log.info(f"\tMessage template ID:\t{selCan.get('template_ID')}")
+    #log.info(f"\tComparison Value:\t{messDat.get('comparison_value')}\n")
 
 
-    
+## Auto-verification of vignette expectations against persona input_messages
 def response_vign_verify(apiReturn, staffID):
     log.debug("RUNNING FUNCTION: 'response_vign_verify'...")
-    validKeys = vignAccPairs.get(staffID)
+    # Set up variables to parse through
+    if args.pilotVerify:
+        log.info(f"Verifying against restricted pilot launch dataset")
+        validKeys = pilotPairs.get(staffID)
+    else:
+        validKeys = vignAccPairs.get(staffID)
     selectedCPs = apiReturn["selected_candidate"].get("acceptable_by")
     selectedMeasure = apiReturn["selected_candidate"].get("measure")
     matchingCP = False
@@ -219,7 +230,7 @@ def response_vign_verify(apiReturn, staffID):
     formattedValidKeys = [      # Make print statement pretty for valid pairs
         f"\t{item['acceptable_by'].title()}\t\t{item['measure']}" for item in validKeys
     ]
-    
+    # Error catcher for missing keys
     if not selectedCPs or not selectedMeasure:
         log.warning("Selected candidate is missing 'acceptable_by' or 'measure'.")
         return
@@ -236,15 +247,15 @@ def response_vign_verify(apiReturn, staffID):
                 matchingMeasure = selectedMeasure
                 break
     
+    # Report results of verification
     if matchingCP and matchingMeasure:
-        log.info("\nVIGNETTE VERIFICATION:\t\tPASS")
+        log.info("VIGNETTE VERIFICATION:\t\tPASS")
         log.info(f"Matched pair:\t\t{matchingCP.title()}\t\t{matchingMeasure}")
     else:
-        log.info("\nVIGNETTE VERIFICATION:\t\tFAIL")
+        log.info("VIGNETTE VERIFICATION:\t\tFAIL")
         for formattedValidKey in formattedValidKeys:
             log.info(f"Expected pairs:\t{formattedValidKey}")
         log.info(f"API returned pair:\n\t\t{selectedCPs}\t\t{selectedMeasure}")
-    log.info(f"Text:\t{apiReturn['Message'].get('text_message')[:55]}\n")
 
 
 
@@ -299,14 +310,14 @@ def handle_response(response, requestID):
     log.debug("RUNNING FUNCTION: 'handle_response'...")
     log.debug(f"Response Content: {response.content}")
     if response.status_code == 200:
-        log.info(f"{requestID}:\tResponse recieved in {response.elapsed.total_seconds():.3f} seconds.")
+        log.info(f"{requestID}:\tResponse received in {response.elapsed.total_seconds():.3f} seconds.")
         apiReturn = response.json()
         staffID = apiReturn["staff_number"]
         
         if args.respond:    # Print output if asked
             text_back(apiReturn)
 
-        if args.vignVerify:    # Validate vignette measure/causal pathway pair in output if asked
+        if args.vignVerify or args.pilotVerify:    # Validate vignette measure/causal pathway pair in output if asked
             response_vign_verify(apiReturn, staffID)
 
         if chkCP:       # Validate causal pathway output if asked
@@ -347,25 +358,28 @@ def go_fetch(url):
 
 
 
-## Read in CSV data from file, convert to JSON... 
+## Read in CSV data from file, convert to JSON...
 def csv_jsoner(path):
     log.debug("RUNNING FUNCTION: 'csv_jsoner'...")
-    performance = pd.read_csv(path, header=None, usecols = range(args.C), nrows= args.RF-args.RI)
+    # Adjust the 'usecols' parameter to skip the first column
+    performance = pd.read_csv(path, header=None, usecols=range(args.CI, args.CF), skiprows=1, nrows=args.RF - args.RI)
+
     rowsRead, colsRead = performance.shape
-    selectedRows = performance.iloc[args.RI : args.RF]
+    selectedRows = performance.iloc[args.RI: args.RF]
     jsonedData = ""
-    
+
     # Integrated dimension error catcher:
-    if colsRead != args.C or rowsRead != args.RF - args.RI:
-        raise ValueError(f"Expected {args.RF - args.RI} rows and {args.C} columns. Actual data is {rowsRead} rows by {colsRead} columns.")
+    if colsRead != args.CF - args.CI or rowsRead != args.RF - args.RI:
+        raise ValueError(f"Expected {args.RF - args.RI} rows and {args.CF - args.CI} columns. Actual data is {rowsRead} rows by {colsRead} columns.")
 
     # Integrated Dataframe to JSON conversion (V.15)
     for i, row in selectedRows.iterrows():
         currentLine = json.dumps(row.to_list())
         jsonedData += currentLine  # content addition
         if i < len(performance) - 1:
-            jsonedData += ",\n\t"   # formatting
+            jsonedData += ",\n\t"  # formatting
     return jsonedData
+
 
 
 
@@ -432,7 +446,7 @@ def test_inputfile(mode, inputID, requestID):
     try:
         if mode == "testIMs":   # Check if testing official persona input messages
             url = f"https://raw.githubusercontent.com/Display-Lab/knowledge-base/main/vignettes/personas/{inputID}/input_message.json"
-            log.info(f"Testing input_message file for persona '{inputID.upper()}'")
+            log.info(f"\nTesting input_message file for persona '{inputID.upper()}'")
 
         elif mode == "testCPs": # Check if testing causal pathway suite input messages
             url = f"https://github.com/Display-Lab/knowledge-base/blob/main/vignettes/dev_templates/causal_pathway_test_suite/{inputID}_cptest.json"
@@ -547,7 +561,6 @@ def main():
             thisThread.join()
 
         log.debug("\t\t# LDT complete #\n\n")
-        log.info("\n\t\tLeakdown test complete.\n")
         exit(0)
 
 

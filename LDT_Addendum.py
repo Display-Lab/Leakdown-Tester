@@ -1,5 +1,5 @@
 ## Version of the Leakdown Tester
-ldtVersion = "1.1.1"
+ldtVersion = "1.2.0"
 
 
 ## JSON content 'header' wrapper section for in-situ payload compilation:
@@ -29,18 +29,17 @@ payloadHeader = '''
 '''
 ## Direct ref performance data for individual tweaks
 postwoman = '''
-    [7,"GLU01","2023-01-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-02-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-03-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-04-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-05-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-06-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-07-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-08-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-09-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-10-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-11-01",45,55,100,45,45,50,1],
-    [7,"GLU01","2023-12-01",45,55,100,45,45,50,1]
+    [6,"SUS04","2023-01-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-02-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-03-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-04-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-05-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-06-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-07-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-08-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-10-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-11-01",98,2,100,90,92,96,90],
+    [6,"SUS04","2023-12-01",93,7,100,90,92,96,90]
 '''
 
 ## JSON content 'footer' wrapper section for in-situ payload compilation:
@@ -104,14 +103,51 @@ vignAccPairs = {
     6: [
         {"acceptable_by": "social gain", "measure": "PUL01"},
         {"acceptable_by": "worsening", "measure": "SUS02"},
-        {"acceptable_by": "goal loss", "measure": "NMB03Peds"}
+        {"acceptable_by": "goal loss", "measure": "NMB03"}
     ],
     7: [
         {"acceptable_by": "social better", "measure": "SUS04"},
         {"acceptable_by": "improving", "measure": "BP03"},
         {"acceptable_by": "worsening", "measure": "SUS02"},
-        {"acceptable_by": "goal loss", "measure": "NMB03Peds"},
+        {"acceptable_by": "goal loss", "measure": "NMB03"},
         {"acceptable_by": "goal gain", "measure": "TOC01"}
+    ]
+}
+
+pilotPairs = {
+    1: [
+        {"acceptable_by": "social worse", "measure": "PONV05"}, # to 75th
+        {"acceptable_by": "social better", "measure": "SUS04"}, # to 90th
+        {"acceptable_by": "social worse", "measure": "GLU03"}   # to 50th
+    ],
+    2: [
+        {"acceptable_by": "social worse", "measure": "PONV05"}, # to 50th
+        {"acceptable_by": "social worse", "measure": "TOC02"}   # to 75th
+    ],
+    3: [
+        {"acceptable_by": "social better", "measure": "PUL01"}, # to 75th
+        {"acceptable_by": "social worse", "measure": "GLU03"}   # to 75th
+    ],
+    4: [
+        {"acceptable_by": "social worse", "measure": "GLU01"},  # to 90th
+        {"acceptable_by": "social worse", "measure": "TOC02"},  # to 90th
+        {"acceptable_by": "social better", "measure": "BP03"}   # to 75th
+    ],
+    5: [
+        {"acceptable_by": "social worse", "measure": "GLU01"},  # to 50th
+        {"acceptable_by": "social better", "measure": "TOC01"}  # to 75th
+    ],
+    6: [
+        {"acceptable_by": "social better", "measure": "PUL01"}, # to 90th
+        {"acceptable_by": "social better", "measure": "SUS02"}, # to 75th
+        {"acceptable_by": "social worse", "measure": "NMB03"}   # to 50th
+    ],
+    7: [
+        {"acceptable_by": "social better", "measure": "SUS04"}, # to 50th
+        {"acceptable_by": "social better", "measure": "BP03"},  # to 75th
+        {"acceptable_by": "social worse", "measure": "SUS02"},  # to 50th
+        {"acceptable_by": "social worse", "measure": "NMB03"},  # to 50th
+        {"acceptable_by": "social worse", "measure": "TOC01"}   # to 90th
     ]
 }
 
