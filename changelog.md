@@ -1,4 +1,8 @@
 # Leakdown Tester Changelog
+## Version 1.2.0
+*Released ...*
+**Changed:** Autoverification minor tweaks to handle the new output formatting after pictoralist rework (--vignVerify)
+
 ## Version 1.1.2
 *Released 10/17/23*
 **Improvement:** Updated CSV infrastructure for easier use to support MPOG data flow testing

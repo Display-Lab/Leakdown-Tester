@@ -100,22 +100,22 @@ def set_behavior():
     
     # Set behavior to run single persona test (2nd)
     elif args.persona != None:
-        log.info("Reading one persona's JSON file from 'Personas' folder...")
+        log.info("Reading one persona's JSON file from remote 'Personas' folder...")
         return "onePers"
     
     # Set behavior to run all persona tests (3rd)
     elif args.allPersonas:          
-        log.info("Reading all JSON files from 'Personas' folder...")
+        log.info("Reading all JSON files from remote 'Personas' folder...")
         return "allPers"
 
    # Set behavior to run single causal pathway test (4th)
     elif args.CP !=  None:          
-        log.info("Reading one JSON file from 'Causal Pathway Test Suite'...")
+        log.info("Reading one JSON file from remote 'Causal Pathway Test Suite'...")
         return "oneCP"
 
    # Set behavior to run all causal pathway tests (5th)
     elif args.allCPs:          
-        log.info("Reading all JSON files from 'Causal Pathway Test Suite'...")
+        log.info("Reading all JSON files from remote 'Causal Pathway Test Suite'...")
         return "allCPs"
 
     elif args.postwoman:
@@ -196,23 +196,27 @@ def text_back(postReturn):
     log.debug("RUNNING FUNCTION: 'text_back'...")
     assert "staff_number" in postReturn, "Key 'staff_number' not found in post response."
     assert "selected_candidate" in postReturn, "Key 'selected_candidate' not found in post response."
-    assert "Message" in postReturn, "Key 'Message' not found in post response." 
+    assert "message" in postReturn, "Key 'message' not found in post response." 
     
     selCan = postReturn["selected_candidate"]
-    messDat = postReturn["Message"]
+    messDat = postReturn["message"]
 
     log.info("API response contains keys:")
     log.info(f"\tStaff ID Number:\t{postReturn['staff_number']}")
     log.info(f"\tDisplay Type:\t\t{selCan.get('display')}")
+    log.info(f"\tImage Extant:\t\t{bool(messDat.get('image'))}")
     log.info(f"\tMeasure:\t\t{selCan.get('measure')}")
     log.info(f"\tAcceptable By:\t\t{selCan.get('acceptable_by')}")
-    log.info(f"\tAbbreviated Message:\t{messDat.get('text_message')[:85]}")
-    log.info(f"\tComparison Value:\t{messDat.get('comparison_value')}\n")
+    #log.info(f"\tAbbreviated Message:\t{messDat.get('text_message')[:85]}\n")
+    log.info(f"\tShort Message:\t{messDat.get('text_message')}\n")
+    #log.info(f"\tMessage template ID:\t{selCan.get('template_ID')}")
+    #log.info(f"\tComparison Value:\t{messDat.get('comparison_value')}\n")
 
 
-    
+## Auto-verification of vignette expectations against persona input_messages
 def response_vign_verify(apiReturn, staffID):
     log.debug("RUNNING FUNCTION: 'response_vign_verify'...")
+    # Set up variables to parse through
     validKeys = vignAccPairs.get(staffID)
     selectedCPs = apiReturn["selected_candidate"].get("acceptable_by")
     selectedMeasure = apiReturn["selected_candidate"].get("measure")
@@ -221,7 +225,7 @@ def response_vign_verify(apiReturn, staffID):
     formattedValidKeys = [      # Make print statement pretty for valid pairs
         f"\t{item['acceptable_by'].title()}\t\t{item['measure']}" for item in validKeys
     ]
-    
+    # Error catcher for missing keys
     if not selectedCPs or not selectedMeasure:
         log.warning("Selected candidate is missing 'acceptable_by' or 'measure'.")
         return
@@ -238,6 +242,7 @@ def response_vign_verify(apiReturn, staffID):
                 matchingMeasure = selectedMeasure
                 break
     
+    # Report results of verification
     if matchingCP and matchingMeasure:
         log.info("\nVIGNETTE VERIFICATION:\t\tPASS")
         log.info(f"Matched pair:\t\t{matchingCP.title()}\t\t{matchingMeasure}")
@@ -246,7 +251,6 @@ def response_vign_verify(apiReturn, staffID):
         for formattedValidKey in formattedValidKeys:
             log.info(f"Expected pairs:\t{formattedValidKey}")
         log.info(f"API returned pair:\n\t\t{selectedCPs}\t\t{selectedMeasure}")
-    log.info(f"Text:\t{apiReturn['Message'].get('text_message')[:55]}\n")
 
 
 
@@ -552,7 +556,6 @@ def main():
             thisThread.join()
 
         log.debug("\t\t# LDT complete #\n\n")
-        log.info("\n\t\tLeakdown test complete.\n")
         exit(0)
 
 

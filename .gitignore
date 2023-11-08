@@ -4,7 +4,7 @@ venv/
 .DS_Store
 .env
 service_account.json
-API_Response_Logs
+APIResponseLogs
 __pycache__
 
 
