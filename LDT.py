@@ -41,6 +41,7 @@ behaviorGroup.add_argument("--persona", choices=["alice", "bob", "chikondi", "de
 behaviorGroup.add_argument("--allPersonas", action="store_true", help="SetTrue: Test all knowledgebase persona input message files.")
 behaviorGroup.add_argument("--CP", choices=["goal_approach","goal_gain","goal_loss","improving","social_approach","social_better","social_gain","social_loss","social_worse","worsening","all"], help="Select a causal pathway (acronym) for testing.")
 behaviorGroup.add_argument("--allCPs", action="store_true", help="SetTrue: Test all causal-pathway-specific input message files.")
+behaviorGroup.add_argument("--sendLocals", type=int, default=1, help="Number of locally-hosted input messages to send.")
 #
 #  Output V&V arguments
 verificationGroup = ap.add_mutually_exclusive_group() # Mutually exclude V&V operations
@@ -129,6 +130,11 @@ def set_behavior():
         log.info(f"Reading in data with dimensions {args.RF - args.RI} by {args.CF - args.CI}...")
         return "CSV"
     
+    # Set behavior to run local input_message files
+    elif args.sendLocals != None:
+        log.info(f"Sending {args.sendLocals} local requests to API instance...")
+        return "sendLocals"
+    
     else:
         log.critical("Could not set Behavior: No content specified for POST request.")
         exit(1)
@@ -208,6 +214,7 @@ def text_back(postReturn):
     log.info(f"\tImage Extant:\t\t{bool(messDat.get('image'))}")
     log.info(f"\tMeasure:\t\t{selCan.get('measure')}")
     log.info(f"\tAcceptable By:\t\t{selCan.get('acceptable_by')}")
+    #log.info(f"\tMessage Instance ID:\t\t{postReturn['message_instance_id']}")
     #log.info(f"\tAbbreviated Message:\t{messDat.get('text_message')[:85]}\n")
     log.info(f"\tShort Message:\t{messDat.get('text_message')}\n")
     #log.info(f"\tMessage template ID:\t{selCan.get('template_ID')}")
@@ -308,7 +315,7 @@ def save_API_resp(postReturn, requestID):
 ## Handle API responses (print resp, check response keys, save logs)...
 def handle_response(response, requestID):
     log.debug("RUNNING FUNCTION: 'handle_response'...")
-    log.debug(f"Response Content: {response.content}")
+    #log.debug(f"Response Content: {response.content}")
     if response.status_code == 200:
         log.info(f"{requestID}:\tResponse received in {response.elapsed.total_seconds():.3f} seconds.")
         apiReturn = response.json()
@@ -432,7 +439,11 @@ def post_and_respond(fullMessage, requestID):
 
         elif args.target == "cloud":
             sentPost = send_iap_post(pfp, fullMessage)
-        
+        '''
+        ## Introduce 50 ms delay on requests to try avoiding 502 error:
+        log.debug(f"\t\t\tGoing sleepy mode...")
+        time.sleep(0.001)
+        '''
         handle_response(sentPost, requestID)
     
     except Exception as e:
@@ -473,6 +484,36 @@ def repo_test(mode, threadIndex, testIndex, requestID):
         requestID = f"Thread {threadIndex}, Test {testIndex}, Request {requestIndex}" # add request index to ID
         args.CP = inputID     # Sneaky way to set current causal pathway from hitlist for verification
         test_inputfile(mode, inputID, requestID)
+
+
+
+## Send local input_message files by user spec...
+def send_locals(numberToSend, folderPath, requestID):
+    log.debug("RUNNING FUNCTION: 'send_locals'...")
+    # Input message local files must be valid JSON files
+    existing_files = [f for f in os.listdir(folderPath) if f.endswith(".json")]
+
+    # Sort existing files numerically
+    existing_files.sort(key=lambda x: int(x.split("_")[1].split(".")[0]))
+
+    # Take the desired number of files
+    files_to_send = existing_files[:args.sendLocals]
+
+    for file_name in files_to_send:
+        log.debug(f'Attempting file: {file_name}')
+        file_path = os.path.join(folderPath, file_name)
+        try:
+            with open(file_path, 'r') as file:
+                json_data = json.load(file)
+                json_str = json.dumps(json_data, indent=2)  # Serialize with proper formatting
+                post_and_respond(json_str, requestID)       # Send and respond to post request
+        
+        # Error catchers for debugging errors
+        except json.decoder.JSONDecodeError as e:
+            log.warning(f"JSON decoding error in {file_name}: {e}")
+        except Exception as e:
+            log.warning(f"Error reading {file_name}: {e}")
+
 
 
 
@@ -524,6 +565,11 @@ def run_requests(behavior, threadIndex, requestID, barrier):
                 perfJSON = csv_jsoner(perfPath)
                 fullMessage = payloadHeader + perfJSON + payloadFooter
                 post_and_respond(fullMessage, requestID)
+            
+            # Send arbitrary local JSON input_message files
+            elif behavior == 'sendLocals':
+                requestID += f"Request 1"
+                send_locals(args.sendLocals, "Local_inputs", requestID)
 
     except Exception as e:
         log.critical(f"{e}")

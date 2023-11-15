@@ -11,3 +11,5 @@ __pycache__
 CSV_files
 restrictor.py
 restrictor2.py
+Local_inputs/*
+*Local_input_cache/
