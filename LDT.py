@@ -539,18 +539,20 @@ def run_requests(behavior, threadIndex, requestID, barrier):
             # Send local input_message files by user spec       (( REFACTOR NEEDED ))
             elif behavior == 'sendLocals':
                 requestID += f"Request 1"
-                folder_path = "Local_inputs"                            # Current path is hard-coded
+                folder_path = "Local_inputs"  # Current path is hard-coded
                 for file_num in range(1, args.sendLocals + 1):
                     file_name = f"Provider_{file_num}.json"
                     file_path = os.path.join(folder_path, file_name)
                     try:
                         with open(file_path, 'r') as file:
                             json_data = json.load(file)
-                            post_and_respond(json_data, requestID)
-                    except Exception as e1:
-                        log.warning(f"{e1}")
-                # You may want to add a delay here if needed
-                # time.sleep(0.05)
+                            json_str = json.dumps(json_data, indent=2)  # Serialize with proper formatting
+                            post_and_respond(json_str, requestID)
+                    except json.decoder.JSONDecodeError as e:
+                        log.warning(f"JSON decoding error in {file_name}: {e}")
+                    except Exception as e:
+                        log.warning(f"Error reading {file_name}: {e}")
+
     
     except Exception as e:
         log.critical(f"{e}")
