@@ -487,6 +487,36 @@ def repo_test(mode, threadIndex, testIndex, requestID):
 
 
 
+## Send local input_message files by user spec...
+def send_locals(numberToSend, folderPath, requestID):
+    log.debug("RUNNING FUNCTION: 'send_locals'...")
+    # Input message local files must be valid JSON files
+    existing_files = [f for f in os.listdir(folderPath) if f.endswith(".json")]
+
+    # Sort existing files numerically
+    existing_files.sort(key=lambda x: int(x.split("_")[1].split(".")[0]))
+
+    # Take the desired number of files
+    files_to_send = existing_files[:args.sendLocals]
+
+    for file_name in files_to_send:
+        log.debug(f'Attempting file: {file_name}')
+        file_path = os.path.join(folderPath, file_name)
+        try:
+            with open(file_path, 'r') as file:
+                json_data = json.load(file)
+                json_str = json.dumps(json_data, indent=2)  # Serialize with proper formatting
+                post_and_respond(json_str, requestID)       # Send and respond to post request
+        
+        # Error catchers for debugging errors
+        except json.decoder.JSONDecodeError as e:
+            log.warning(f"JSON decoding error in {file_name}: {e}")
+        except Exception as e:
+            log.warning(f"Error reading {file_name}: {e}")
+
+
+
+
 ## Run POST requests while tracking thread number...
 ## Handles logic previously assigned to main script body
 def run_requests(behavior, threadIndex, requestID, barrier): 
@@ -536,24 +566,11 @@ def run_requests(behavior, threadIndex, requestID, barrier):
                 fullMessage = payloadHeader + perfJSON + payloadFooter
                 post_and_respond(fullMessage, requestID)
             
-            # Send local input_message files by user spec       (( REFACTOR NEEDED ))
+            # Send arbitrary local JSON input_message files
             elif behavior == 'sendLocals':
                 requestID += f"Request 1"
-                folder_path = "Local_inputs"  # Current path is hard-coded
-                for file_num in range(1, args.sendLocals + 1):
-                    file_name = f"Provider_{file_num}.json"
-                    file_path = os.path.join(folder_path, file_name)
-                    try:
-                        with open(file_path, 'r') as file:
-                            json_data = json.load(file)
-                            json_str = json.dumps(json_data, indent=2)  # Serialize with proper formatting
-                            post_and_respond(json_str, requestID)
-                    except json.decoder.JSONDecodeError as e:
-                        log.warning(f"JSON decoding error in {file_name}: {e}")
-                    except Exception as e:
-                        log.warning(f"Error reading {file_name}: {e}")
+                send_locals(args.sendLocals, "Local_inputs", requestID)
 
-    
     except Exception as e:
         log.critical(f"{e}")
 
