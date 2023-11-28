@@ -1,7 +1,6 @@
 from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman, pilotPairs
 from google.oauth2 import service_account
 import google.auth.transport.requests
-from collections import defaultdict
 from dotenv import load_dotenv
 import threading
 from threading import Barrier
@@ -98,7 +97,7 @@ if args.saveLog:
 ## Set script behavior for JSON content source (+ error handling and readback)...
 def set_behavior():
     global perfPath
-    logger.debug("RUNNING FUNCTION: 'set_behavior'...")
+    logger.opt(colors=True).debug("<dim>Running 'set_behavior'...</>")
     # Error catcher for multiple JSON payload specification
     if perfPath != None and args.useGit != None:
         logger.warning("Multiple JSON payloads specified.\tContinuing with GitHub payload...\n")
@@ -152,7 +151,7 @@ def set_behavior():
 ## Configure API endpoint from argument...
 def set_target():
     global pfp, oidcToken
-    logger.debug("RUNNING FUNCTION: 'set_target'...")    
+    logger.opt(colors=True).debug("<dim>Running 'set_target'...</>")    
     
     # Local API target:
     if args.target == "local":
@@ -187,7 +186,7 @@ def set_target():
 
 ## Calculate total number of POST requests script will try to send...
 def calc_total_reqs(behavior):
-    logger.debug("RUNNING FUNCTION: 'calc_total_reqs'...")
+    logger.opt(colors=True).debug("<dim>Running 'calc_total_reqs'...</>")
     if behavior == "allPers":
         totalRequests = len(hitlistIM) * args.tests * args.threads
     if behavior == "allCPs":
@@ -208,7 +207,7 @@ def calc_total_reqs(behavior):
 
 ## Print subset of JSON keys from API response...
 def log_response_subset(response):
-    logger.debug("RUNNING FUNCTION: 'log_response_subset'...")
+    logger.opt(colors=True).debug("<dim>Running 'log_response_subset'...</>")
     try:
         logger.opt(colors=True).log("RESPONSE", f"<b><cyan>API response contains keys:</></>")
         # Declare dict of keys in API response to log
@@ -233,15 +232,9 @@ def log_response_subset(response):
 
 
 
-## Generate summary report of latest batch of responses from target API...
-def response_report(apiReturn):
-    logger.debug("RUNNING FUNCITON: 'response_report'...")
-
-
-
 ## Auto-verification of vignette expectations against persona input_messages
 def response_vign_verify(apiReturn, staffID):
-    logger.debug("RUNNING FUNCTION: 'response_vign_verify'...")
+    logger.opt(colors=True).debug("<dim>Running 'response_vign_verify'...</>")
     # Set up variables to parse through
     if args.pilotVerify:
         logger.info(f"Verifying against restricted pilot launch dataset")
@@ -286,7 +279,7 @@ def response_vign_verify(apiReturn, staffID):
 
 ## Check output message against requested Causal Pathway...
 def response_CP_verify(apiReturn, causalPathway):
-    logger.debug("RUNNING FUNCTION: 'response_CP_verify'...")
+    logger.opt(colors=True).debug("<dim>Running 'response_CP_verify'...</>")
     try:
         assert causalPathway is not None and isinstance(causalPathway, str), "Causal Pathway passed is not a valid string"
         assert apiReturn["selected_candidate"].get("acceptable_by") is not None, "No 'Acceptable By' keys returned by API"
@@ -312,7 +305,7 @@ def response_CP_verify(apiReturn, causalPathway):
 
 ## Save PFP API responses for manual review...
 def save_API_resp(postReturn, requestID):
-    logger.debug("RUNNING FUNCTION: 'save_API_resp'...")
+    logger.opt(colors=True).debug("<dim>Running 'save_API_resp'...</>")
     folderName = "APIResponseLogs"
     os.makedirs(folderName, exist_ok=True)
 
@@ -330,9 +323,42 @@ def save_API_resp(postReturn, requestID):
 
 
 
+## Update summary dictionaries with template, pathway, and measures of each response...
+def update_summary_dicts(response_json):
+    logger.opt(colors=True).debug("<dim>Runnning 'update_summary_dicts'...</>")
+    if 'selected_candidate' in response_json:
+        pathway_sum_dict.append(str(response_json['selected_candidate'].get('acceptable_by')))      # Add pathway to dict, cast as string
+        measures_sum_dict.append(str(response_json['selected_candidate'].get('measure')))           # Add measure to dict as string
+        templates_sum_dict.append(str(response_json['selected_candidate'].get('message_template_id')))  # Add message template ID as string
+
+
+## Add summary text to log after all threads rejoin...
+# no args as dicts are global if --report is used
+def report_summary():
+    logger.opt(colors=True).log('RESPONSE', f'\t\t <b><cyan>Response Summary Report for this test:</></>\n')
+    report_matrix = [
+        ('Message Templates', templates_sum_dict),
+        ('Causal Pathways', pathway_sum_dict),
+        ('Measures', measures_sum_dict),
+    ]
+
+    # Iterate through report matrix, generate report for each of the three dicts
+    for dict_name, summary_dict in report_matrix:
+        sum_dict_length = len(summary_dict)
+        unique_items = set(summary_dict)  # Convert to a set to get unique items
+        logger.opt(colors=True).log('RESPONSE', f'<cyan>{dict_name} were:</>')
+        
+        # Iterate through unique strings in each of the three dicts, display how many of each string are in the overall summary dict
+        for item in unique_items:
+            item_count = summary_dict.count(item)  # Count occurrences of each unique item
+            logger.opt(colors=True).log('RESPONSE', f'<cyan>{item}:</><white>\t{item_count}/{sum_dict_length}</>')
+
+
+
+
 ## Handle API responses (print resp, check response keys, save logs)...
 def handle_response(response, requestID):
-    logger.debug("RUNNING FUNCTION: 'handle_response'...")
+    logger.opt(colors=True).debug("<dim>Running 'handle_response'...</>")
     #logger.debug(f"Response Content: {response.content}")
     if response.status_code == 200:
         logger.info(f"{requestID}:\tResponse received in {response.elapsed.total_seconds():.3f} seconds.")
@@ -352,6 +378,9 @@ def handle_response(response, requestID):
         if args.saveResponse:    # Save output if asked
             save_API_resp(response, requestID)
 
+        if args.report:         # Update summary dicts when requested
+            update_summary_dicts(apiReturn)
+
     else:
         logger.error("Bad response from target API:\n\t\t\tStatus Code:\t{!r}\nHeaders: {!r}\n{!r}".format(
         response.status_code, response.headers, response.text))
@@ -366,7 +395,7 @@ def handle_response(response, requestID):
 
 ## Fetch JSON content from GitHub... (V9)
 def go_fetch(url):
-    logger.debug("RUNNING FUNCTION: 'go_fetch'...")
+    logger.opt(colors=True).debug("<dim>Running 'go_fetch'...</>")
     if "github.com" in url:
         url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob", "")
     header = {"Accept": "application/vnd.github.v3.raw"} # tell gitHub to send as raw, uncompressed
@@ -385,7 +414,7 @@ def go_fetch(url):
 
 ## Read in CSV data from file, convert to JSON...
 def csv_jsoner(path):
-    logger.debug("RUNNING FUNCTION: 'csv_jsoner'...")
+    logger.opt(colors=True).debug("<dim>Running 'csv_jsoner'...</>")
     # Adjust the 'usecols' parameter to skip the first column
     performance = pd.read_csv(path, header=None, usecols=range(args.CI, args.CF), skiprows=1, nrows=args.RF - args.RI)
 
@@ -416,7 +445,7 @@ def csv_jsoner(path):
 
 ## Send POST request to unprotected URLs...
 def send_post(pfp, fullMessage):
-    logger.debug("RUNNING FUNCTION: 'send_unprotected_post'...")
+    logger.opt(colors=True).debug("<dim>Running 'send_unprotected_post'...</>")
     header = {"Content-Type": "application/json"}
     response = requests.post(pfp, data=fullMessage, headers=header)
     return response
@@ -425,7 +454,7 @@ def send_post(pfp, fullMessage):
 
 ## Send POST request to IAP protected URLs...
 def send_iap_post(url, fullMessage, method="POST"):
-    logger.debug("RUNNING FUNCTION:  'send_iap_post'...")
+    logger.opt(colors=True).debug("<dim>Running  'send_iap_post'...</>")
    
     # Check if token valid, refresh expired token if not
     if oidcToken.valid != True:
@@ -450,15 +479,16 @@ def send_iap_post(url, fullMessage, method="POST"):
 ## Send POST request (IAP or Unprotected), then handle response...
 def post_and_respond(fullMessage, requestID):
     global pfp
-    logger.debug("RUNNING FUNCTION: 'post_and_respond'...")
+    logger.opt(colors=True).debug("<dim>Running 'post_and_respond'...</>")
     try:
         if args.target != "cloud":
-            sentPost = send_post(pfp, fullMessage)
+            response = send_post(pfp, fullMessage)
 
         elif args.target == "cloud":
-            sentPost = send_iap_post(pfp, fullMessage)
-
-        handle_response(sentPost, requestID)
+            response = send_iap_post(pfp, fullMessage)
+        
+        # ALL requests go through handle_response (by design)
+        handle_response(response, requestID)
     
     except Exception as e:
         logger.critical(f"{e}")
@@ -467,7 +497,7 @@ def post_and_respond(fullMessage, requestID):
 
 ## Test a knowledgebase repo input message JSON file...
 def test_inputfile(mode, inputID, requestID):
-    logger.debug("RUNNING FUNCTION: 'test_inputfile'...")
+    logger.opt(colors=True).debug("<dim>Running 'test_inputfile'...</>")
     try:
         if mode == "testIMs":   # Check if testing official persona input messages
             url = f"https://raw.githubusercontent.com/Display-Lab/knowledge-base/main/vignettes/personas/{inputID}/input_message.json"
@@ -488,7 +518,7 @@ def test_inputfile(mode, inputID, requestID):
 
 ## Automated full repo testing of all knowledgebase files...
 def repo_test(mode, threadIndex, testIndex, requestID):
-    logger.debug("RUNNING FUNCTION: 'repo_test'...")
+    logger.opt(colors=True).debug("<dim>Running 'repo_test'...</>")
     if mode == "testIMs":   # Run when testing persona input messages
         hitlist = hitlistIM
     elif mode == "testCPs": # Run when testing causal pathway input messages
@@ -503,7 +533,7 @@ def repo_test(mode, threadIndex, testIndex, requestID):
 
 ## Send local input_message files by user spec...
 def send_locals(numberToSend, folderPath, requestID):
-    logger.debug("RUNNING FUNCTION: 'send_locals'...")
+    logger.opt(colors=True).debug("<dim>Running 'send_locals'...</>")
     request_count = 0
     # Input message local files must be valid JSON files
     existing_files = [f for f in os.listdir(folderPath) if f.endswith(".json")]
@@ -540,7 +570,7 @@ def send_locals(numberToSend, folderPath, requestID):
 ## Run POST requests while tracking thread number...
 ## Handles logic previously assigned to main script body
 def run_requests(behavior, threadIndex, requestID, barrier): 
-    logger.debug("RUNNING FUNCTION: 'run_requests'...")
+    logger.opt(colors=True).debug("<dim>Running 'run_requests'...</>")
     barrier.wait()  # Wait at barrier for all threads to be up
     try:
         for testIndex in range(args.tests):   # iterate through requested tests
@@ -609,7 +639,14 @@ def main():
         set_target()                                                # Set API endpoint
         barrier = Barrier(args.threads)                             # Holds until all threads are up
         
-        # Spawn and run threads 
+        # Initialize dictionaries for summary tracking while requests are sent
+        if args.report:
+            global templates_sum_dict, pathway_sum_dict, measures_sum_dict
+            templates_sum_dict  = []
+            pathway_sum_dict    = []
+            measures_sum_dict   = []
+        
+        # Spawn and run test threads 
         threads = []
         for threadIndex in range(args.threads):
             requestID = f"Thread {threadIndex + 1}, "   # First part of requesID name sequence
@@ -622,10 +659,11 @@ def main():
             logger.debug(f"\tThread #{threadIndex+1} started...")
 
         # Wait for threads to finish running
-        for thisThread in threads:
-            thisThread.join()
+        for thisThread in threads: thisThread.join()
 
-        logger.success("\t\t# LDT complete #\n\n")
+        if args.report: report_summary()
+
+        logger.success("\t\t LDT complete \n\n")
         exit(0)
 
 

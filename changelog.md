@@ -2,6 +2,7 @@
 ## Version 1.3.0
 *Released TBD*
 **Added:** Detailed summary report for multi-message debug of PFP API
+- Use --report to generate a summary of measures, templates, and causal pathways which were used in feedback generation
   
 **Added** function to send local input_messages from a file directory  
 - access with --sendLocals X where X is the number of files to send from the directory ('Local_inputs')  
