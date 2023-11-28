@@ -209,16 +209,17 @@ def text_back(postReturn):
     messDat = postReturn["message"]
 
     log.info("API response contains keys:")
-    log.info(f"\tStaff ID Number:\t{postReturn['staff_number']}")
-    log.info(f"\tDisplay Type:\t\t{selCan.get('display')}")
-    log.info(f"\tImage Extant:\t\t{bool(messDat.get('image'))}")
-    log.info(f"\tMeasure:\t\t{selCan.get('measure')}")
-    log.info(f"\tAcceptable By:\t\t{selCan.get('acceptable_by')}")
-    #log.info(f"\tMessage Instance ID:\t\t{postReturn['message_instance_id']}")
+    log.info(f"\tStaff ID Number:  \t{postReturn['staff_number']}")
+    log.info(f"\tMessage Instance ID:\t{postReturn['message_instance_id']}")
+    log.info(f"\tPerformance Month:\t{postReturn['performance_month']}")
+    log.info(f"\tDisplay Type:     \t{selCan.get('display')}")
+    log.info(f"\tImage Extant:     \t{bool(messDat.get('image'))}")
+    log.info(f"\tMeasure:          \t{selCan.get('measure')}")
+    log.info(f"\tAcceptable By:    \t{selCan.get('acceptable_by')}")
+    log.info(f"\tAbout Comparator: \t{postReturn['selected_comparator']}")
     #log.info(f"\tAbbreviated Message:\t{messDat.get('text_message')[:85]}\n")
-    log.info(f"\tShort Message:\t{messDat.get('text_message')}\n")
+    log.info(f"\tText Message:    \t{messDat.get('text_message')}\n")
     #log.info(f"\tMessage template ID:\t{selCan.get('template_ID')}")
-    #log.info(f"\tComparison Value:\t{messDat.get('comparison_value')}\n")
 
 
 ## Auto-verification of vignette expectations against persona input_messages
@@ -439,11 +440,7 @@ def post_and_respond(fullMessage, requestID):
 
         elif args.target == "cloud":
             sentPost = send_iap_post(pfp, fullMessage)
-        '''
-        ## Introduce 50 ms delay on requests to try avoiding 502 error:
-        log.debug(f"\t\t\tGoing sleepy mode...")
-        time.sleep(0.001)
-        '''
+
         handle_response(sentPost, requestID)
     
     except Exception as e:
@@ -490,6 +487,7 @@ def repo_test(mode, threadIndex, testIndex, requestID):
 ## Send local input_message files by user spec...
 def send_locals(numberToSend, folderPath, requestID):
     log.debug("RUNNING FUNCTION: 'send_locals'...")
+    request_count = 0
     # Input message local files must be valid JSON files
     existing_files = [f for f in os.listdir(folderPath) if f.endswith(".json")]
 
@@ -500,6 +498,11 @@ def send_locals(numberToSend, folderPath, requestID):
     files_to_send = existing_files[:args.sendLocals]
 
     for file_name in files_to_send:
+        request_count += 1
+        if request_count % 6 == 0 and args.target == 'cloud':
+            log.info(f'Throttling requests for 30 seconds...')
+            time.sleep(30)
+        
         log.debug(f'Attempting file: {file_name}')
         file_path = os.path.join(folderPath, file_name)
         try:
