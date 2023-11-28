@@ -2,9 +2,10 @@ from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion,
 from google.oauth2 import service_account
 import google.auth.transport.requests
 from dotenv import load_dotenv
-from google.auth import crypt
 import threading
 from threading import Barrier
+from google.auth import crypt
+from functools import reduce
 from loguru import logger
 import pandas as pd
 import requests
@@ -72,12 +73,17 @@ servAccPath = args.servAcc  if args.servAcc != None else    os.environ.get("SAPA
 
 
 #### Logging module configuration ######################################################
-log_level    = logging.DEBUG         if args.debug       else logging.INFO  # Set log level
-logger.add(sys.stdout, level=log_level, format="<b><green>{level}</green></> | {message}")
-# Save console log if asked
+logger.remove()
+log_level    = "DEBUG"         if args.debug       else "INFO"  # Set log level
+
+# Create unified sink with standard and custom log levels
+logger.level("RESPONSE", no=21, color="<cyan>")
+logger.add(sys.stdout, level=log_level, format="<b><level>{level}</></> \t{message}")
+
+# Save console log to file if asked
 if args.saveLog:
     log_filename = 'Leakdown_Tests.log'  if args.saveLog   else None          
-    logger.add(log_filename, level=log_level, format="<green>{level}</green> | {message}")
+    logger.add(log_filename, level=log_level, format="<level>{level}</> \t| {message}")
 
 
 
@@ -199,33 +205,37 @@ def calc_total_reqs(behavior):
 ### These functions print out response output, handle making logs of response output,
 ### and validate responses against known-good data (vignette specifications)
 
-## Print relevant JSON keys from API response...
-def text_back(postReturn):
-    logger.debug("RUNNING FUNCTION: 'text_back'...")
-    assert "staff_number" in postReturn, "Key 'staff_number' not found in post response."
-    assert "selected_candidate" in postReturn, "Key 'selected_candidate' not found in post response."
-    assert "message" in postReturn, "Key 'message' not found in post response." 
-    
-    selCan = postReturn["selected_candidate"]
-    messDat = postReturn["message"]
+## Print subset of JSON keys from API response...
+def log_response_subset(response):
+    logger.debug("RUNNING FUNCTION: 'log_response_subset'...")
+    try:
+        logger.opt(colors=True).log("RESPONSE", f"<b><cyan>API response contains keys:</></>")
+        # Declare dict of keys in API response to log
+        standard_keys = [
+            'staff_number', 'message_instance_id', 'performance_month', 'selected_comparator',
+            'selected_candidate.display', 'selected_candidate.measure', 'selected_candidate.acceptable_by',
+            'message.text_message'
+        ]
+        # Report image status vs returning full base64 key:
+        logger.opt(colors=True).log("RESPONSE", f"<cyan>message.image:</>\t\t<white>{bool(response['message'].get('image'))}</>")
 
-    logger.info("API response contains keys:")
-    logger.info(f"\tStaff ID Number:  \t{postReturn['staff_number']}")
-    logger.info(f"\tMessage Instance ID:\t{postReturn['message_instance_id']}")
-    logger.info(f"\tPerformance Month:\t{postReturn['performance_month']}")
-    logger.info(f"\tDisplay Type:     \t{selCan.get('display')}")
-    logger.info(f"\tImage Extant:     \t{bool(messDat.get('image'))}")
-    logger.info(f"\tMeasure:          \t{selCan.get('measure')}")
-    logger.info(f"\tAcceptable By:    \t{selCan.get('acceptable_by')}")
-    logger.info(f"\tAbout Comparator: \t{postReturn['selected_comparator']}")
-    #logger.info(f"\tAbbreviated Message:\t{messDat.get('text_message')[:85]}\n")
-    logger.info(f"\tText Message:    \t{messDat.get('text_message')}\n")
-    #logger.info(f"\tMessage template ID:\t{selCan.get('template_ID')}")
+        # Iterate through dict, logging keys (now properly handling missing keys d/t PFP versioning differences across instances)
+        for key in standard_keys:
+            try:
+                value = reduce(lambda x, k: x[k] if isinstance(x, dict) and k in x else None, key.split('.'), response)
+                logger.opt(colors=True).log("RESPONSE", f"<cyan>{key}</>:\t<white>{value}</>")
+            except KeyError:
+                logger.opt(colors=True).log("RESPONSE", f"<cyan>{key}</>:\t<dim>Not present</>")
+
+    except Exception as e:
+        logger.error(f'Error logging API response keys: {e}')
+
 
 
 ## Generate summary report of latest batch of responses from target API...
 def response_report(apiReturn):
     logger.debug("RUNNING FUNCITON: 'response_report'...")
+
 
 
 ## Auto-verification of vignette expectations against persona input_messages
@@ -329,7 +339,7 @@ def handle_response(response, requestID):
         staffID = apiReturn["staff_number"]
         
         if args.respond:    # Print output if asked
-            text_back(apiReturn)
+            log_response_subset(apiReturn)
 
         if args.vignVerify or args.pilotVerify:    # Validate vignette measure/causal pathway pair in output if asked
             response_vign_verify(apiReturn, staffID)
@@ -591,8 +601,7 @@ def run_requests(behavior, threadIndex, requestID, barrier):
 
 ########### Main Script Body ################################
 def main():
-    logger.debug("\t\t# LDT started #")
-    logger.info(f"\n\t\tWelcome to the Leakdown Tester, Version {ldtVersion}!")
+    logger.success(f"\n\t\tWelcome to the Leakdown Tester, Version {ldtVersion}!")
     try:
         behavior = set_behavior()                                   # Set behavior
         calc_total_reqs(behavior)                                   # Calculate request number total
@@ -615,7 +624,7 @@ def main():
         for thisThread in threads:
             thisThread.join()
 
-        logger.debug("\t\t# LDT complete #\n\n")
+        logger.success("\t\t# LDT complete #\n\n")
         exit(0)
 
 
