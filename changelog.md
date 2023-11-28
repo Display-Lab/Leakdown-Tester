@@ -9,6 +9,7 @@
 
 **Changed:** Logging strategy from default logger to loguru
 - Allows colorization, easier formatting of logging for debug review and log output
+- Added in-line colorations of API key responses when using --respond
 
 ## Version 1.2.0
 *Released 11/8/23*

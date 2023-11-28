@@ -1,6 +1,7 @@
 from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman, pilotPairs
 from google.oauth2 import service_account
 import google.auth.transport.requests
+from collections import defaultdict
 from dotenv import load_dotenv
 import threading
 from threading import Barrier
@@ -212,9 +213,9 @@ def log_response_subset(response):
         logger.opt(colors=True).log("RESPONSE", f"<b><cyan>API response contains keys:</></>")
         # Declare dict of keys in API response to log
         standard_keys = [
-            'staff_number', 'message_instance_id', 'performance_month', 'selected_comparator',
-            'selected_candidate.display', 'selected_candidate.measure', 'selected_candidate.acceptable_by',
-            'message.text_message'
+            'staff_number', 'message_instance_id', 'performance_month', 'selected_comparator',                  # 'Naked' keys
+            'selected_candidate.display', 'selected_candidate.measure', 'selected_candidate.acceptable_by',     # Selected candidate keys
+            'message.text_message'                                                                              # Message keys
         ]
         # Report image status vs returning full base64 key:
         logger.opt(colors=True).log("RESPONSE", f"<cyan>message.image:</>\t\t<white>{bool(response['message'].get('image'))}</>")
