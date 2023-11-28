@@ -7,6 +7,9 @@
 - access with --sendLocals X where X is the number of files to send from the directory ('Local_inputs')  
 - supports arbitrarily named JSON files, designed for use with MPOG data flows but supports any valid JSON  
 
+**Changed:** Logging strategy from default logger to loguru
+- Allows colorization, easier formatting of logging for debug review and log output
+
 ## Version 1.2.0
 *Released 11/8/23*
 **Changed:** Autoverification minor tweaks to handle the new output formatting after pictoralist rework (--vignVerify)  

@@ -1,20 +1,20 @@
+from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman, pilotPairs
+from google.oauth2 import service_account
+import google.auth.transport.requests
+from dotenv import load_dotenv
+from google.auth import crypt
+import threading
+from threading import Barrier
+from loguru import logger
 import pandas as pd
 import requests
+import argparse
 import certifi
-import google.auth.transport.requests
-from google.auth import crypt
-from google.oauth2 import service_account
+import base64
 import json
 import time
 import os
 import sys
-import argparse
-import base64
-import logging
-import threading
-from threading import Barrier
-from LDT_Addendum import vignAccPairs, payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman, pilotPairs
-from dotenv import load_dotenv
 global pfp, audience, perfPath, servAccPath, chkCP
 
 load_dotenv()
@@ -29,8 +29,9 @@ configGroup.add_argument("--tests", type=int, default=1, help="Number of Leakdow
 configGroup.add_argument("--threads", type=int, default=1, help="Number of threads to run Leakdown Tests on in parallel.")
 configGroup.add_argument("--respond", action="store_true", help="SetTrue: Log subset of API response keys.")
 configGroup.add_argument("--saveResponse", action="store_true", help="SetTrue: Save entire API response(s) to text file(s).")
-configGroup.add_argument("--debug", action="store_true", help="SetTrue: Shows debug-focused console log.")
-configGroup.add_argument("--saveDebug", action="store_true", help="SetTrue: Writes LDT logs to text file.")
+configGroup.add_argument("--debug", action="store_true", help="SetTrue: Shows debug-focused console logger.")
+configGroup.add_argument("--saveLog", action="store_true", help="SetTrue: Writes LDT logs to text file.")
+configGroup.add_argument("--report", action="store_true", help="SetTrue: Shows report of latest run, with selected message measures, templates, and causal pathway summaries.")
 #
 # Behavior-setting arguments
 behaviorGroup = ap.add_mutually_exclusive_group() # Mutually exclude args that set behavior
@@ -71,13 +72,13 @@ servAccPath = args.servAcc  if args.servAcc != None else    os.environ.get("SAPA
 
 
 #### Logging module configuration ######################################################
-logLevel    = logging.DEBUG         if args.debug       else logging.INFO  # Set log level
-printLevel  = "%(levelname)s  \t|"  if args.debug       else ""            # Output log level when debugging
-logFilename = 'Leakdown_Tests.log'  if args.saveDebug   else None          # Save console log if asked
+log_level    = logging.DEBUG         if args.debug       else logging.INFO  # Set log level
+logger.add(sys.stdout, level=log_level, format="<b><green>{level}</green></> | {message}")
+# Save console log if asked
+if args.saveLog:
+    log_filename = 'Leakdown_Tests.log'  if args.saveLog   else None          
+    logger.add(log_filename, level=log_level, format="<green>{level}</green> | {message}")
 
-logging.basicConfig(level=logLevel, filename=logFilename,
-                    format=printLevel+' %(message)s')
-log = logging.getLogger("LeakdownTester")                                  # Start and name logger instance
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -90,53 +91,53 @@ log = logging.getLogger("LeakdownTester")                                  # Sta
 ## Set script behavior for JSON content source (+ error handling and readback)...
 def set_behavior():
     global perfPath
-    log.debug("RUNNING FUNCTION: 'set_behavior'...")
+    logger.debug("RUNNING FUNCTION: 'set_behavior'...")
     # Error catcher for multiple JSON payload specification
     if perfPath != None and args.useGit != None:
-        log.warning("Multiple JSON payloads specified.\tContinuing with GitHub payload...\n")
+        logger.warning("Multiple JSON payloads specified.\tContinuing with GitHub payload...\n")
     
     # Set behavior to use user-specified GitHub content (1st priority)
     elif args.useGit != None:      
-        log.info(f"Reading JSON data from GitHub file at {args.useGit}...")
+        logger.info(f"Reading JSON data from GitHub file at {args.useGit}...")
         return "customGithub"
     
     # Set behavior to run single persona test (2nd)
     elif args.persona != None:
-        log.info("Reading one persona's JSON file from remote 'Personas' folder...")
+        logger.info("Reading one persona's JSON file from remote 'Personas' folder...")
         return "onePers"
     
     # Set behavior to run all persona tests (3rd)
     elif args.allPersonas:          
-        log.info("Reading all JSON files from remote 'Personas' folder...")
+        logger.info("Reading all JSON files from remote 'Personas' folder...")
         return "allPers"
 
    # Set behavior to run single causal pathway test (4th)
     elif args.CP !=  None:          
-        log.info("Reading one JSON file from remote 'Causal Pathway Test Suite'...")
+        logger.info("Reading one JSON file from remote 'Causal Pathway Test Suite'...")
         return "oneCP"
 
    # Set behavior to run all causal pathway tests (5th)
     elif args.allCPs:          
-        log.info("Reading all JSON files from remote 'Causal Pathway Test Suite'...")
+        logger.info("Reading all JSON files from remote 'Causal Pathway Test Suite'...")
         return "allCPs"
 
     elif args.postwoman:
-        log.info("Using 'Postwoman' var in Addendum file as JSON payload...")
+        logger.info("Using 'Postwoman' var in Addendum file as JSON payload...")
         return "postwoman"
 
     # Set behavior to use CSV content (last priority)
     elif args.useCSV:
-        log.info(f"Reading data from CSV file at '{perfPath}'...")
-        log.info(f"Reading in data with dimensions {args.RF - args.RI} by {args.CF - args.CI}...")
+        logger.info(f"Reading data from CSV file at '{perfPath}'...")
+        logger.info(f"Reading in data with dimensions {args.RF - args.RI} by {args.CF - args.CI}...")
         return "CSV"
     
     # Set behavior to run local input_message files
     elif args.sendLocals != None:
-        log.info(f"Sending {args.sendLocals} local requests to API instance...")
+        logger.info(f"Sending {args.sendLocals} local requests to API instance...")
         return "sendLocals"
     
     else:
-        log.critical("Could not set Behavior: No content specified for POST request.")
+        logger.critical("Could not set Behavior: No content specified for POST request.")
         exit(1)
 
 
@@ -144,7 +145,7 @@ def set_behavior():
 ## Configure API endpoint from argument...
 def set_target():
     global pfp, oidcToken
-    log.debug("RUNNING FUNCTION: 'set_target'...")    
+    logger.debug("RUNNING FUNCTION: 'set_target'...")    
     
     # Local API target:
     if args.target == "local":
@@ -165,21 +166,21 @@ def set_target():
         servAccPath,
         target_audience = audience,
         )
-        log.debug(f"Debug statements for GCP connection setup:\nTarget Audience:\n{audience}")
-        log.debug(f"Service Account Path:\n{servAccPath}")
-        log.debug(f"OIDCToken:{oidcToken}")
+        logger.debug(f"Debug statements for GCP connection setup:\nTarget Audience:\n{audience}")
+        logger.debug(f"Service Account Path:\n{servAccPath}")
+        logger.debug(f"OIDCToken:{oidcToken}")
     
     else:
-        log.warning("Target not declared. Continuing with local PFP target.")
+        logger.warning("Target not declared. Continuing with local PFP target.")
     
     # Readback endpoint target when successfull
-    log.info(f"Sending POST request(s) to API at '{pfp}'...\n")
+    logger.info(f"Sending POST request(s) to API at '{pfp}'...\n")
 
 
 
 ## Calculate total number of POST requests script will try to send...
 def calc_total_reqs(behavior):
-    log.debug("RUNNING FUNCTION: 'calc_total_reqs'...")
+    logger.debug("RUNNING FUNCTION: 'calc_total_reqs'...")
     if behavior == "allPers":
         totalRequests = len(hitlistIM) * args.tests * args.threads
     if behavior == "allCPs":
@@ -187,7 +188,7 @@ def calc_total_reqs(behavior):
     else:
         totalRequests = args.tests * args.threads
     
-    log.info(f"Sending {totalRequests} total POST requests...")
+    logger.info(f"Sending {totalRequests} total POST requests...")
     return totalRequests
 
 
@@ -200,7 +201,7 @@ def calc_total_reqs(behavior):
 
 ## Print relevant JSON keys from API response...
 def text_back(postReturn):
-    log.debug("RUNNING FUNCTION: 'text_back'...")
+    logger.debug("RUNNING FUNCTION: 'text_back'...")
     assert "staff_number" in postReturn, "Key 'staff_number' not found in post response."
     assert "selected_candidate" in postReturn, "Key 'selected_candidate' not found in post response."
     assert "message" in postReturn, "Key 'message' not found in post response." 
@@ -208,26 +209,31 @@ def text_back(postReturn):
     selCan = postReturn["selected_candidate"]
     messDat = postReturn["message"]
 
-    log.info("API response contains keys:")
-    log.info(f"\tStaff ID Number:  \t{postReturn['staff_number']}")
-    log.info(f"\tMessage Instance ID:\t{postReturn['message_instance_id']}")
-    log.info(f"\tPerformance Month:\t{postReturn['performance_month']}")
-    log.info(f"\tDisplay Type:     \t{selCan.get('display')}")
-    log.info(f"\tImage Extant:     \t{bool(messDat.get('image'))}")
-    log.info(f"\tMeasure:          \t{selCan.get('measure')}")
-    log.info(f"\tAcceptable By:    \t{selCan.get('acceptable_by')}")
-    log.info(f"\tAbout Comparator: \t{postReturn['selected_comparator']}")
-    #log.info(f"\tAbbreviated Message:\t{messDat.get('text_message')[:85]}\n")
-    log.info(f"\tText Message:    \t{messDat.get('text_message')}\n")
-    #log.info(f"\tMessage template ID:\t{selCan.get('template_ID')}")
+    logger.info("API response contains keys:")
+    logger.info(f"\tStaff ID Number:  \t{postReturn['staff_number']}")
+    logger.info(f"\tMessage Instance ID:\t{postReturn['message_instance_id']}")
+    logger.info(f"\tPerformance Month:\t{postReturn['performance_month']}")
+    logger.info(f"\tDisplay Type:     \t{selCan.get('display')}")
+    logger.info(f"\tImage Extant:     \t{bool(messDat.get('image'))}")
+    logger.info(f"\tMeasure:          \t{selCan.get('measure')}")
+    logger.info(f"\tAcceptable By:    \t{selCan.get('acceptable_by')}")
+    logger.info(f"\tAbout Comparator: \t{postReturn['selected_comparator']}")
+    #logger.info(f"\tAbbreviated Message:\t{messDat.get('text_message')[:85]}\n")
+    logger.info(f"\tText Message:    \t{messDat.get('text_message')}\n")
+    #logger.info(f"\tMessage template ID:\t{selCan.get('template_ID')}")
+
+
+## Generate summary report of latest batch of responses from target API...
+def response_report(apiReturn):
+    logger.debug("RUNNING FUNCITON: 'response_report'...")
 
 
 ## Auto-verification of vignette expectations against persona input_messages
 def response_vign_verify(apiReturn, staffID):
-    log.debug("RUNNING FUNCTION: 'response_vign_verify'...")
+    logger.debug("RUNNING FUNCTION: 'response_vign_verify'...")
     # Set up variables to parse through
     if args.pilotVerify:
-        log.info(f"Verifying against restricted pilot launch dataset")
+        logger.info(f"Verifying against restricted pilot launch dataset")
         validKeys = pilotPairs.get(staffID)
     else:
         validKeys = vignAccPairs.get(staffID)
@@ -240,7 +246,7 @@ def response_vign_verify(apiReturn, staffID):
     ]
     # Error catcher for missing keys
     if not selectedCPs or not selectedMeasure:
-        log.warning("Selected candidate is missing 'acceptable_by' or 'measure'.")
+        logger.warning("Selected candidate is missing 'acceptable_by' or 'measure'.")
         return
     
     # Check if any of the selected CPs match the valid CPs
@@ -257,24 +263,24 @@ def response_vign_verify(apiReturn, staffID):
     
     # Report results of verification
     if matchingCP and matchingMeasure:
-        log.info("VIGNETTE VERIFICATION:\t\tPASS")
-        log.info(f"Matched pair:\t\t{matchingCP.title()}\t\t{matchingMeasure}")
+        logger.info("VIGNETTE VERIFICATION:\t\tPASS")
+        logger.info(f"Matched pair:\t\t{matchingCP.title()}\t\t{matchingMeasure}")
     else:
-        log.info("VIGNETTE VERIFICATION:\t\tFAIL")
+        logger.info("VIGNETTE VERIFICATION:\t\tFAIL")
         for formattedValidKey in formattedValidKeys:
-            log.info(f"Expected pairs:\t{formattedValidKey}")
-        log.info(f"API returned pair:\n\t\t{selectedCPs}\t\t{selectedMeasure}")
+            logger.info(f"Expected pairs:\t{formattedValidKey}")
+        logger.info(f"API returned pair:\n\t\t{selectedCPs}\t\t{selectedMeasure}")
 
 
 
 ## Check output message against requested Causal Pathway...
 def response_CP_verify(apiReturn, causalPathway):
-    log.debug("RUNNING FUNCTION: 'response_CP_verify'...")
+    logger.debug("RUNNING FUNCTION: 'response_CP_verify'...")
     try:
         assert causalPathway is not None and isinstance(causalPathway, str), "Causal Pathway passed is not a valid string"
         assert apiReturn["selected_candidate"].get("acceptable_by") is not None, "No 'Acceptable By' keys returned by API"
     except AssertionError as e:
-        log.critical("Assertion error: " + str(e))
+        logger.critical("Assertion error: " + str(e))
         return
     
     causalPathway = causalPathway.replace("_", " ")  # replace underscores of user input with spaces
@@ -284,18 +290,18 @@ def response_CP_verify(apiReturn, causalPathway):
     for selectedCP in selectedCPList:
         selectedCP = selectedCP.lower()
         if causalPathway == selectedCP:
-            log.info(f"CAUSAL PATHWAY VERIFICATION:\tPASS\n\t\tSpecified Pathway:\t{causalPathway}\n\t\tAccepted Pathway:\t{selectedCP}")
-            log.info(f"PFP returns acceptable candidates: {selectedCPList}\n")
+            logger.info(f"CAUSAL PATHWAY VERIFICATION:\tPASS\n\t\tSpecified Pathway:\t{causalPathway}\n\t\tAccepted Pathway:\t{selectedCP}")
+            logger.info(f"PFP returns acceptable candidates: {selectedCPList}\n")
             break
         else:
-            log.info(f"CAUSAL PATHWAY VERIFICATION:\tFAIL\n\t\tSpecified Pathway:\t{causalPathway}\n\t\tAccepted Pathway:\t{selectedCPList}")
-            log.info(f"No matching causal pathway found for '{causalPathway}'.\n")
+            logger.info(f"CAUSAL PATHWAY VERIFICATION:\tFAIL\n\t\tSpecified Pathway:\t{causalPathway}\n\t\tAccepted Pathway:\t{selectedCPList}")
+            logger.info(f"No matching causal pathway found for '{causalPathway}'.\n")
 
 
 
 ## Save PFP API responses for manual review...
 def save_API_resp(postReturn, requestID):
-    log.debug("RUNNING FUNCTION: 'save_API_resp'...")
+    logger.debug("RUNNING FUNCTION: 'save_API_resp'...")
     folderName = "APIResponseLogs"
     os.makedirs(folderName, exist_ok=True)
 
@@ -305,20 +311,20 @@ def save_API_resp(postReturn, requestID):
 
     with open(texName, "w") as file:
         json.dump(responseJson, file, indent=2)
-        log.info(f"PFP response text saved to '{texName}'")
+        logger.info(f"PFP response text saved to '{texName}'")
     
     with open(imgName, "wb") as imageFile:
         imageFile.write(base64.b64decode(responseJson["Message"]["image"]))
-        log.info(f"Pictoralist image saved to '{imgName}'.\n\n")
+        logger.info(f"Pictoralist image saved to '{imgName}'.\n\n")
 
 
 
 ## Handle API responses (print resp, check response keys, save logs)...
 def handle_response(response, requestID):
-    log.debug("RUNNING FUNCTION: 'handle_response'...")
-    #log.debug(f"Response Content: {response.content}")
+    logger.debug("RUNNING FUNCTION: 'handle_response'...")
+    #logger.debug(f"Response Content: {response.content}")
     if response.status_code == 200:
-        log.info(f"{requestID}:\tResponse received in {response.elapsed.total_seconds():.3f} seconds.")
+        logger.info(f"{requestID}:\tResponse received in {response.elapsed.total_seconds():.3f} seconds.")
         apiReturn = response.json()
         staffID = apiReturn["staff_number"]
         
@@ -336,7 +342,7 @@ def handle_response(response, requestID):
             save_API_resp(response, requestID)
 
     else:
-        log.error("Bad response from target API:\n\t\t\tStatus Code:\t{!r}\nHeaders: {!r}\n{!r}".format(
+        logger.error("Bad response from target API:\n\t\t\tStatus Code:\t{!r}\nHeaders: {!r}\n{!r}".format(
         response.status_code, response.headers, response.text))
 
 
@@ -349,7 +355,7 @@ def handle_response(response, requestID):
 
 ## Fetch JSON content from GitHub... (V9)
 def go_fetch(url):
-    log.debug("RUNNING FUNCTION: 'go_fetch'...")
+    logger.debug("RUNNING FUNCTION: 'go_fetch'...")
     if "github.com" in url:
         url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob", "")
     header = {"Accept": "application/vnd.github.v3.raw"} # tell gitHub to send as raw, uncompressed
@@ -368,7 +374,7 @@ def go_fetch(url):
 
 ## Read in CSV data from file, convert to JSON...
 def csv_jsoner(path):
-    log.debug("RUNNING FUNCTION: 'csv_jsoner'...")
+    logger.debug("RUNNING FUNCTION: 'csv_jsoner'...")
     # Adjust the 'usecols' parameter to skip the first column
     performance = pd.read_csv(path, header=None, usecols=range(args.CI, args.CF), skiprows=1, nrows=args.RF - args.RI)
 
@@ -399,7 +405,7 @@ def csv_jsoner(path):
 
 ## Send POST request to unprotected URLs...
 def send_post(pfp, fullMessage):
-    log.debug("RUNNING FUNCTION: 'send_unprotected_post'...")
+    logger.debug("RUNNING FUNCTION: 'send_unprotected_post'...")
     header = {"Content-Type": "application/json"}
     response = requests.post(pfp, data=fullMessage, headers=header)
     return response
@@ -408,7 +414,7 @@ def send_post(pfp, fullMessage):
 
 ## Send POST request to IAP protected URLs...
 def send_iap_post(url, fullMessage, method="POST"):
-    log.debug("RUNNING FUNCTION:  'send_iap_post'...")
+    logger.debug("RUNNING FUNCTION:  'send_iap_post'...")
    
     # Check if token valid, refresh expired token if not
     if oidcToken.valid != True:
@@ -425,7 +431,7 @@ def send_iap_post(url, fullMessage, method="POST"):
     },
     json=fullMessage,
     )
-    log.debug(f"bearer Token:\n{oidcToken.token}")
+    logger.debug(f"bearer Token:\n{oidcToken.token}")
     return resp
 
 
@@ -433,7 +439,7 @@ def send_iap_post(url, fullMessage, method="POST"):
 ## Send POST request (IAP or Unprotected), then handle response...
 def post_and_respond(fullMessage, requestID):
     global pfp
-    log.debug("RUNNING FUNCTION: 'post_and_respond'...")
+    logger.debug("RUNNING FUNCTION: 'post_and_respond'...")
     try:
         if args.target != "cloud":
             sentPost = send_post(pfp, fullMessage)
@@ -444,34 +450,34 @@ def post_and_respond(fullMessage, requestID):
         handle_response(sentPost, requestID)
     
     except Exception as e:
-        log.critical(f"{e}")
+        logger.critical(f"{e}")
 
 
 
 ## Test a knowledgebase repo input message JSON file...
 def test_inputfile(mode, inputID, requestID):
-    log.debug("RUNNING FUNCTION: 'test_inputfile'...")
+    logger.debug("RUNNING FUNCTION: 'test_inputfile'...")
     try:
         if mode == "testIMs":   # Check if testing official persona input messages
             url = f"https://raw.githubusercontent.com/Display-Lab/knowledge-base/main/vignettes/personas/{inputID}/input_message.json"
-            log.info(f"\nTesting input_message file for persona '{inputID.upper()}'")
+            logger.info(f"\nTesting input_message file for persona '{inputID.upper()}'")
 
         elif mode == "testCPs": # Check if testing causal pathway suite input messages
             url = f"https://github.com/Display-Lab/knowledge-base/blob/main/vignettes/dev_templates/causal_pathway_test_suite/{inputID}_cptest.json"
             inputID = inputID.replace("_"," ")  # replace underscores with spaces
-            log.info(f"Testing input_message file for causal pathway '{inputID.upper()}'")
+            logger.info(f"Testing input_message file for causal pathway '{inputID.upper()}'")
         
         jsonContent = go_fetch(url)     # retrieve github json content
         post_and_respond(jsonContent, requestID)
 
     except Exception as e:
-        log.critical(f"{e}")
+        logger.critical(f"{e}")
 
 
 
 ## Automated full repo testing of all knowledgebase files...
 def repo_test(mode, threadIndex, testIndex, requestID):
-    log.debug("RUNNING FUNCTION: 'repo_test'...")
+    logger.debug("RUNNING FUNCTION: 'repo_test'...")
     if mode == "testIMs":   # Run when testing persona input messages
         hitlist = hitlistIM
     elif mode == "testCPs": # Run when testing causal pathway input messages
@@ -486,7 +492,7 @@ def repo_test(mode, threadIndex, testIndex, requestID):
 
 ## Send local input_message files by user spec...
 def send_locals(numberToSend, folderPath, requestID):
-    log.debug("RUNNING FUNCTION: 'send_locals'...")
+    logger.debug("RUNNING FUNCTION: 'send_locals'...")
     request_count = 0
     # Input message local files must be valid JSON files
     existing_files = [f for f in os.listdir(folderPath) if f.endswith(".json")]
@@ -500,10 +506,10 @@ def send_locals(numberToSend, folderPath, requestID):
     for file_name in files_to_send:
         request_count += 1
         if request_count % 6 == 0 and args.target == 'cloud':
-            log.info(f'Throttling requests for 30 seconds...')
+            logger.info(f'Throttling requests for 30 seconds...')
             time.sleep(30)
         
-        log.debug(f'Attempting file: {file_name}')
+        logger.debug(f'Attempting file: {file_name}')
         file_path = os.path.join(folderPath, file_name)
         try:
             with open(file_path, 'r') as file:
@@ -513,9 +519,9 @@ def send_locals(numberToSend, folderPath, requestID):
         
         # Error catchers for debugging errors
         except json.decoder.JSONDecodeError as e:
-            log.warning(f"JSON decoding error in {file_name}: {e}")
+            logger.warning(f"JSON decoding error in {file_name}: {e}")
         except Exception as e:
-            log.warning(f"Error reading {file_name}: {e}")
+            logger.warning(f"Error reading {file_name}: {e}")
 
 
 
@@ -523,11 +529,11 @@ def send_locals(numberToSend, folderPath, requestID):
 ## Run POST requests while tracking thread number...
 ## Handles logic previously assigned to main script body
 def run_requests(behavior, threadIndex, requestID, barrier): 
-    log.debug("RUNNING FUNCTION: 'run_requests'...")
+    logger.debug("RUNNING FUNCTION: 'run_requests'...")
     barrier.wait()  # Wait at barrier for all threads to be up
     try:
         for testIndex in range(args.tests):   # iterate through requested tests
-            #log.info(f"\nThread #{threadIndex+1}: Running test {testIndex+1} of {args.tests}:")
+            #logger.info(f"\nThread #{threadIndex+1}: Running test {testIndex+1} of {args.tests}:")
             requestID = f"Thread {threadIndex+1}, " # reset requestID
             requestID += f"Test {testIndex+1}, "   # add test # to response name
         
@@ -575,7 +581,7 @@ def run_requests(behavior, threadIndex, requestID, barrier):
                 send_locals(args.sendLocals, "Local_inputs", requestID)
 
     except Exception as e:
-        log.critical(f"{e}")
+        logger.critical(f"{e}")
 
 
 
@@ -585,8 +591,8 @@ def run_requests(behavior, threadIndex, requestID, barrier):
 
 ########### Main Script Body ################################
 def main():
-    log.debug("\t\t# LDT started #")
-    log.info(f"\n\t\tWelcome to the Leakdown Tester, Version {ldtVersion}!")
+    logger.debug("\t\t# LDT started #")
+    logger.info(f"\n\t\tWelcome to the Leakdown Tester, Version {ldtVersion}!")
     try:
         behavior = set_behavior()                                   # Set behavior
         calc_total_reqs(behavior)                                   # Calculate request number total
@@ -603,18 +609,18 @@ def main():
             )
             threads.append(thisThread)
             thisThread.start()
-            log.debug(f"\tThread #{threadIndex+1} started...")
+            logger.debug(f"\tThread #{threadIndex+1} started...")
 
         # Wait for threads to finish running
         for thisThread in threads:
             thisThread.join()
 
-        log.debug("\t\t# LDT complete #\n\n")
+        logger.debug("\t\t# LDT complete #\n\n")
         exit(0)
 
 
     except ValueError as e:
-        log.critical(f"{e}")
+        logger.critical(f"{e}")
         exit(1)
 
 

@@ -56,7 +56,7 @@ Format for argument specifications in the section below:
 - Default: None  
 - SetTrue; Shows debug-focused console log.  
 
-`--saveDebug` 
+`--saveLog` 
 - Default: None  
 - SetTrue: Writes LDT logs to text file. 
    + Without debug enabled, will only save INFO level logging statements (normal output, essentially).  
