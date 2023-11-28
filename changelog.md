@@ -2,9 +2,7 @@
 ## Version 1.3.0
 *Released TBD*
 **Added:** Detailed summary report for multi-message debug of PFP API
-
-## Version 1.2.1  
-*Released 11/28/23*  
+  
 **Added** function to send local input_messages from a file directory  
 - access with --sendLocals X where X is the number of files to send from the directory ('Local_inputs')  
 - supports arbitrarily named JSON files, designed for use with MPOG data flows but supports any valid JSON  
