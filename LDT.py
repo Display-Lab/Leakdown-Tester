@@ -92,7 +92,6 @@ def set_behavior():
 
 ## Configure API endpoint from argument...
 def set_target():
-    global oidcToken
     logger.opt(colors=True).trace("<dim>Running 'set_target'...</>")    
     
     # Local API target:
@@ -110,13 +109,13 @@ def set_target():
         
 
         args.pfp = "https://pfp.test.app.med.umich.edu/createprecisionfeedback/"
-        oidcToken = service_account.IDTokenCredentials.from_service_account_file(
+        args.oidcToken = service_account.IDTokenCredentials.from_service_account_file(
         args.SAPath,
         target_audience = args.audience,
         )
         logger.debug(f"Debug statements for GCP connection setup:\nTarget Audience:\n{args.audience}")
         logger.debug(f"Service Account Path:\n{args.SAPath}")
-        logger.debug(f"OIDCToken:{oidcToken}")
+        logger.debug(f"OIDCToken:{args.oidcToken}")
     
     else:
         logger.warning("Target not declared. Continuing with local PFP target.")

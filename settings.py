@@ -55,6 +55,7 @@ args.audience    = os.environ.get("TARGET_AUDIENCE")
 args.checkCP     = args.cpVerify if args.CP != None or args.allCPs    else None             # Only allow CP check if testing CPs
 args.perfCSVPath = args.csv      if args.csv != None     else    os.environ.get("CSVPATH")  # Path to performance CSV data
 args.SAPath      = args.servAcc  if args.servAcc != None else    os.environ.get("SAPATH")   # Path to service account file
+args.oidcToken   = None     # Init here, overwrite if GCP authentication request sent
 
 ## Summary report storage class
 class ReportData:

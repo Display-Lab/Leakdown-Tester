@@ -3,10 +3,12 @@ import json
 import time
 import requests
 from loguru import logger
+import google.auth.transport.requests
+from google.oauth2 import service_account
 from settings import args
 from response_handling import handle_response
 from LDT_Addendum import hitlistIM, hitlistCP
-global oidcToken
+
 
 
 #### POST Functions ###################################################################
@@ -43,24 +45,24 @@ def send_post(pfp, fullMessage):
 
 ## Send POST request to IAP protected URLs...
 def send_iap_post(url, fullMessage, method="POST"):
-    logger.opt(colors=True).trace("<dim>Running  'send_iap_post'...</>")
+    logger.opt(colors=True).trace("<dim>Running  'post_functions.send_iap_post'...</>")
    
     # Check if token valid, refresh expired token if not
-    if oidcToken.valid != True:
+    if args.oidcToken.valid != True:
         request = google.auth.transport.requests.Request()
-        oidcToken.refresh(request)
+        args.oidcToken.refresh(request)
 
     # Fetch IAP-protected URL, auth header 'Bearer', and OpenID Connect token
     fullMessage=json.loads(fullMessage)
     resp = requests.post(
     url,
     headers={
-        "Authorization": "Bearer {}".format(oidcToken.token),
+        "Authorization": "Bearer {}".format(args.oidcToken.token),
         "Content-Type": "application/json",  # Set content-type to JSON
     },
     json=fullMessage,
     )
-    logger.debug(f"bearer Token:\n{oidcToken.token}")
+    logger.debug(f"bearer Token:\n{args.oidcToken.token}")
     return resp
 
 
