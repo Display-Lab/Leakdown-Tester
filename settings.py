@@ -15,7 +15,7 @@ configGroup.add_argument("--tests", type=int, default=1, help="Number of Leakdow
 configGroup.add_argument("--threads", type=int, default=1, help="Number of threads to run Leakdown Tests on in parallel.")
 configGroup.add_argument("--respond", action="store_true", help="SetTrue: Log subset of API response keys.")
 configGroup.add_argument("--saveResponse", action="store_true", help="SetTrue: Save entire API response(s) to text file(s).")
-configGroup.add_argument("--debug", action="store_true", help="SetTrue: Shows debug-focused console logger.")
+configGroup.add_argument("--loglvl", choices=['info', 'debug', 'trace'], default='info', help="Specify log level for console statements.")
 configGroup.add_argument("--saveLog", action="store_true", help="SetTrue: Writes LDT logs to text file.")
 configGroup.add_argument("--report", action="store_true", help="SetTrue: Shows report of latest run, with selected message measures, templates, and causal pathway summaries.")
 #
@@ -55,3 +55,11 @@ args.audience    = os.environ.get("TARGET_AUDIENCE")
 args.checkCP     = args.cpVerify if args.CP != None or args.allCPs    else None             # Only allow CP check if testing CPs
 args.perfCSVPath = args.csv      if args.csv != None     else    os.environ.get("CSVPATH")  # Path to performance CSV data
 args.SAPath      = args.servAcc  if args.servAcc != None else    os.environ.get("SAPATH")   # Path to service account file
+
+## Summary report storage class
+class ReportData:
+    def __init__(self):
+        self.templates  = []
+        self.pathways   = []
+        self.measures   = []
+report_data = ReportData() # Instantiate

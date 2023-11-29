@@ -12,8 +12,11 @@
 - Allows colorization, easier formatting of logging for debug review and log output
 - Added in-line colorations of API key responses when using --respond
 
-**Changed:** Refactored settings, XYZ to modules
-- no functional changes
+**Changed:** Refactored settings, post functions, and response handling to modules
+- No functional changes to user workflow
+
+**Changed:** Log level argument setting
+- Deprecated using --debug; now use --loglvl (options: info, debug, trace)
 
 ## Version 1.2.0
 *Released 11/8/23*
