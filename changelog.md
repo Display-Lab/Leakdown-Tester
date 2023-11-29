@@ -12,6 +12,9 @@
 - Allows colorization, easier formatting of logging for debug review and log output
 - Added in-line colorations of API key responses when using --respond
 
+**Changed:** Refactored settings, XYZ to modules
+- no functional changes
+
 ## Version 1.2.0
 *Released 11/8/23*
 **Changed:** Autoverification minor tweaks to handle the new output formatting after pictoralist rework (--vignVerify)  

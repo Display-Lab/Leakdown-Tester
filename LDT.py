@@ -6,6 +6,7 @@ import threading
 from threading import Barrier
 from google.auth import crypt
 from functools import reduce
+from settings import args
 from loguru import logger
 import pandas as pd
 import requests
@@ -16,61 +17,6 @@ import json
 import time
 import os
 import sys
-global pfp, audience, perfPath, servAccPath, chkCP
-
-load_dotenv()
-#### ARGUMENTS ###############################################################################################
-# Initialize argparse, define command-line arguments, create and populate arg groups #
-ap = argparse.ArgumentParser(description="Leakdown Tester Script")
-
-# General test configuration arguments
-configGroup = ap.add_argument_group()
-configGroup.add_argument("--target", choices=["local", "heroku", "cloud"], default="local", help="Target PFP environment: use 'local', 'heroku', or 'cloud'.")
-configGroup.add_argument("--tests", type=int, default=1, help="Number of Leakdown Tests to perform.")
-configGroup.add_argument("--threads", type=int, default=1, help="Number of threads to run Leakdown Tests on in parallel.")
-configGroup.add_argument("--respond", action="store_true", help="SetTrue: Log subset of API response keys.")
-configGroup.add_argument("--saveResponse", action="store_true", help="SetTrue: Save entire API response(s) to text file(s).")
-configGroup.add_argument("--debug", action="store_true", help="SetTrue: Shows debug-focused console logger.")
-configGroup.add_argument("--saveLog", action="store_true", help="SetTrue: Writes LDT logs to text file.")
-configGroup.add_argument("--report", action="store_true", help="SetTrue: Shows report of latest run, with selected message measures, templates, and causal pathway summaries.")
-#
-# Behavior-setting arguments
-behaviorGroup = ap.add_mutually_exclusive_group() # Mutually exclude args that set behavior
-behaviorGroup.add_argument("--useCSV", action="store_true", help="SetTrue: Use performance data JSON payload from CSV file.")
-behaviorGroup.add_argument("--postwoman", action="store_true", help="SetTrue: Use performance data JSON payload from addendum file.")
-behaviorGroup.add_argument("--useGit", type=str, default=None, help="Address of GitHub input message file to send pipeline.")
-behaviorGroup.add_argument("--persona", choices=["alice", "bob", "chikondi", "deepa", "eugene", "fahad", "gaile"], help="Select a persona for testing.")
-behaviorGroup.add_argument("--allPersonas", action="store_true", help="SetTrue: Test all knowledgebase persona input message files.")
-behaviorGroup.add_argument("--CP", choices=["goal_approach","goal_gain","goal_loss","improving","social_approach","social_better","social_gain","social_loss","social_worse","worsening","all"], help="Select a causal pathway (acronym) for testing.")
-behaviorGroup.add_argument("--allCPs", action="store_true", help="SetTrue: Test all causal-pathway-specific input message files.")
-behaviorGroup.add_argument("--sendLocals", type=int, default=1, help="Number of locally-hosted input messages to send.")
-#
-#  Output V&V arguments
-verificationGroup = ap.add_mutually_exclusive_group() # Mutually exclude V&V operations
-verificationGroup.add_argument("--vignVerify", action="store_true", help="SetTrue: Compare output message keys against vignette data library.")
-verificationGroup.add_argument("--pilotVerify", action="store_true", help="SetTrue: Compare output message keys against pilot's restricted vignette data library.")
-verificationGroup.add_argument("--cpVerify", action="store_true", help="SetTrue: Compare input and output causal pathway for match.")
-#
-# CSV payload config arguments
-ap.add_argument("--RI", type=int, default=0, help="First row of data to read from CSV.")
-ap.add_argument("--RF", type=int, default=12, help="Last row of data to read from CSV.")
-ap.add_argument("--CI", type=int, default=0, help="First column to read from CSV.")
-ap.add_argument("--CF", type=int, default=10, help="Final column to read from CSV.")
-# 
-# Required file pathing (argument specified)
-ap.add_argument("--csv", type=str, default=None, help="CSV filepath; when specified overwrites 'CSVPATH', uses CSV data for JSON payload(s).")
-ap.add_argument("--servAcc", type=str, default=None, help="Filepath to the service account file to read from" )
-#
-args = ap.parse_args()      # Parse initialization arguments
-
-
-##### Assign Environmental Variables, ft. overwrite logic where appropriate #########
-pfp         = os.environ.get("PFP")
-audience    = os.environ.get("TARGET_AUDIENCE")
-chkCP       = args.cpVerify if args.CP != None or args.allCPs    else None             # Only allow CP check if testing CPs
-perfPath    = args.csv      if args.csv != None     else    os.environ.get("CSVPATH")  # Path to performance CSV data
-servAccPath = args.servAcc  if args.servAcc != None else    os.environ.get("SAPATH")   # Path to service account file
-
 
 #### Logging module configuration ######################################################
 logger.remove()
@@ -86,7 +32,6 @@ if args.saveLog:
     logger.add(log_filename, level=log_level, format="<level>{level}</> \t| {message}")
 
 
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
@@ -96,10 +41,9 @@ if args.saveLog:
 
 ## Set script behavior for JSON content source (+ error handling and readback)...
 def set_behavior():
-    global perfPath
     logger.opt(colors=True).debug("<dim>Running 'set_behavior'...</>")
     # Error catcher for multiple JSON payload specification
-    if perfPath != None and args.useGit != None:
+    if args.perfCSVPath != None and args.useGit != None:
         logger.warning("Multiple JSON payloads specified.\tContinuing with GitHub payload...\n")
     
     # Set behavior to use user-specified GitHub content (1st priority)
@@ -133,7 +77,7 @@ def set_behavior():
 
     # Set behavior to use CSV content (last priority)
     elif args.useCSV:
-        logger.info(f"Reading data from CSV file at '{perfPath}'...")
+        logger.info(f"Reading data from CSV file at '{args.perfCSVPath}'...")
         logger.info(f"Reading in data with dimensions {args.RF - args.RI} by {args.CF - args.CI}...")
         return "CSV"
     
@@ -150,37 +94,37 @@ def set_behavior():
 
 ## Configure API endpoint from argument...
 def set_target():
-    global pfp, oidcToken
+    global oidcToken
     logger.opt(colors=True).debug("<dim>Running 'set_target'...</>")    
     
     # Local API target:
     if args.target == "local":
-        pfp = "http://127.0.0.1:8000/createprecisionfeedback/"
+        args.pfp = "http://127.0.0.1:8000/createprecisionfeedback/"
     
     # Heroku API target:
     elif args.target == "heroku":
-        pfp = "https://pfpapi.herokuapp.com/createprecisionfeedback/"
+        args.pfp = "https://pfpapi.herokuapp.com/createprecisionfeedback/"
     
     # GCP API target (ft. token retrieval):
     elif args.target == "cloud":
-        assert audience, "Target Audience not set. Exiting..."
-        assert servAccPath, "Service Account Path not set. Exiting..."
+        assert args.audience, "Target Audience not set. Exiting..."
+        assert args.SAPath, "Service Account Path not set. Exiting..."
         
 
-        pfp = "https://pfp.test.app.med.umich.edu/createprecisionfeedback/"
+        args.pfp = "https://pfp.test.app.med.umich.edu/createprecisionfeedback/"
         oidcToken = service_account.IDTokenCredentials.from_service_account_file(
-        servAccPath,
-        target_audience = audience,
+        args.SAPath,
+        target_audience = args.audience,
         )
-        logger.debug(f"Debug statements for GCP connection setup:\nTarget Audience:\n{audience}")
-        logger.debug(f"Service Account Path:\n{servAccPath}")
+        logger.debug(f"Debug statements for GCP connection setup:\nTarget Audience:\n{args.audience}")
+        logger.debug(f"Service Account Path:\n{args.SAPath}")
         logger.debug(f"OIDCToken:{oidcToken}")
     
     else:
         logger.warning("Target not declared. Continuing with local PFP target.")
     
     # Readback endpoint target when successfull
-    logger.info(f"Sending POST request(s) to API at '{pfp}'...\n")
+    logger.info(f"Sending POST request(s) to API at '{args.pfp}'...\n")
 
 
 
@@ -371,7 +315,7 @@ def handle_response(response, requestID):
         if args.vignVerify or args.pilotVerify:    # Validate vignette measure/causal pathway pair in output if asked
             response_vign_verify(apiReturn, staffID)
 
-        if chkCP:       # Validate causal pathway output if asked
+        if args.checkCP:       # Validate causal pathway output if asked
             response_CP_verify(apiReturn, args.CP)
             # not an ideal way to incorporate which causal pathway we want to assert, but workable
             
@@ -478,14 +422,13 @@ def send_iap_post(url, fullMessage, method="POST"):
 
 ## Send POST request (IAP or Unprotected), then handle response...
 def post_and_respond(fullMessage, requestID):
-    global pfp
     logger.opt(colors=True).debug("<dim>Running 'post_and_respond'...</>")
     try:
         if args.target != "cloud":
-            response = send_post(pfp, fullMessage)
+            response = send_post(args.pfp, fullMessage)
 
         elif args.target == "cloud":
-            response = send_iap_post(pfp, fullMessage)
+            response = send_iap_post(args.pfp, fullMessage)
         
         # ALL requests go through handle_response (by design)
         handle_response(response, requestID)
@@ -612,7 +555,7 @@ def run_requests(behavior, threadIndex, requestID, barrier):
             # Build JSON payload from CSV file and post
             elif behavior == "CSV":
                 requestID += f"Request 1"  # complete request name
-                perfJSON = csv_jsoner(perfPath)
+                perfJSON = csv_jsoner(args.perfCSVPath)
                 fullMessage = payloadHeader + perfJSON + payloadFooter
                 post_and_respond(fullMessage, requestID)
             
