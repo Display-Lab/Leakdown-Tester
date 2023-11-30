@@ -5,3 +5,4 @@ python_dotenv
 google-auth
 google-auth-httplib2
 google-auth-oauthlib
+loguru

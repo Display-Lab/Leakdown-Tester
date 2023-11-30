@@ -1,9 +1,22 @@
 # Leakdown Tester Changelog  
-## Version 1.2.1  
-*Released 11/28/23*  
+## Version 1.3.0
+*Released TBD*
+**Added:** Detailed summary report for multi-message debug of PFP API
+- Use --report to generate a summary of measures, templates, and causal pathways which were used in feedback generation
+  
 **Added** function to send local input_messages from a file directory  
 - access with --sendLocals X where X is the number of files to send from the directory ('Local_inputs')  
 - supports arbitrarily named JSON files, designed for use with MPOG data flows but supports any valid JSON  
+
+**Changed:** Logging strategy from default logger to loguru
+- Allows colorization, easier formatting of logging for debug review and log output
+- Added in-line colorations of API key responses when using --respond
+
+**Changed:** Refactored settings, post functions, and response handling to modules
+- No functional changes to user workflow
+
+**Changed:** Log level argument setting
+- Deprecated using --debug; now use --loglvl (options: info, debug, trace)
 
 ## Version 1.2.0
 *Released 11/8/23*

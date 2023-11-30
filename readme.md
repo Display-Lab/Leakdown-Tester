@@ -19,7 +19,7 @@ Below are the arguments that can be used to run LDT. Initializing with all defau
 First time using LDT? Try the example command below to run a verification test of all personas on the knowledgebase:
 
 ```zsh
-python3 LDT.py --pilotVerify --allPersonas
+python3 LDT.py --target heroku --allPersonas --report
 ```
 
 ---
@@ -52,14 +52,18 @@ Format for argument specifications in the section below:
 - Default: None  
 - SetTrue; Saves the entire API response(s) to text file(s).  
 
-`--debug`
-- Default: None  
-- SetTrue; Shows debug-focused console log.  
+`--loglvl` `String`
+- Default: 'info'  
+- String specifying the level of information to display in the console log. Use info for normal testing, debug for more information on the inner workings of functions when things are mis-behaving, and trace for trace-level statements as each function in the script is called.  
 
-`--saveDebug` 
+`--saveLog` 
 - Default: None  
 - SetTrue: Writes LDT logs to text file. 
-   + Without debug enabled, will only save INFO level logging statements (normal output, essentially).  
+   + Saves direct from sys.stdout, granularity changes with level of --loglvl.  
+
+`--report` 
+- Default: None  
+- SetTrue: Generates a summary of the selected candidates used to generate feedback (all responses) from a single LDT test.  
 
 ### Behavior-setting arguments
 `--useCSV`  
@@ -99,6 +103,10 @@ Format for argument specifications in the section below:
 `--allCPs`  
 - Default: None  
 - SetTrue: Tests all causal-pathway-specific input message files, excepting `all_cptest.json`.  
+
+`--sendLocals` `integer`  
+- Default: 1  
+- Integer: Tests X locally stored JSON input message files against a specified API endpoint. Make sure to add the tests cases you wish to send to the `Local_inputs` directory in LDT. 
 
 ### Output Verification and Validation arguments
 Note: V&V options are mutually exclusive, only one kind of operation can be performed during an LDT run.
