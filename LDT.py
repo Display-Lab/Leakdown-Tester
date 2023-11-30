@@ -18,7 +18,7 @@ import os
 import sys
 
 #### Logging module configuration ######################################################
-logger.remove()
+logger.remove()     # comment out when tracing to get higher specificity than V1.3.0 generally provides
 log_level = args.loglvl.upper()  # Set log level
 
 # Create unified sink with standard and custom log levels

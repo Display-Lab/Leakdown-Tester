@@ -126,7 +126,8 @@ def save_API_resp(postReturn, requestID):
         logger.info(f"PFP response text saved to '{texName}'")
     
     with open(imgName, "wb") as imageFile:
-        imageFile.write(base64.b64decode(responseJson["Message"]["image"]))
+        image_data = b''.join(responseJson['message']['image']) # rebuild image from list of bytes to full obj
+        imageFile.write(base64.b64decode(image_data))
         logger.info(f"Pictoralist image saved to '{imgName}'.\n\n")
 
 
@@ -155,7 +156,7 @@ def report_summary(report_data):
     for dict_name, summary_dict in report_matrix:
         sum_dict_length = len(summary_dict)
         unique_items = set(summary_dict)  # Convert to a set to get unique items
-        logger.opt(colors=True).log('RESPONSE', f'<c>{dict_name} were:</>')
+        logger.opt(colors=True).log('RESPONSE', f'<c><u>{dict_name} were:</></>')
         
         # Iterate through unique strings in each of the three dicts, display how many of each string are in the overall summary dict
         for item in unique_items:
