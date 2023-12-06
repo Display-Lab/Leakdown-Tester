@@ -173,6 +173,7 @@ def handle_response(response, requestID):
     if response.status_code == 200:
         logger.info(f"{requestID}:\tResponse received in {response.elapsed.total_seconds():.3f} seconds.")
         apiReturn = response.json()
+        #logger.debug(f"Full response from API is:\n{apiReturn}")
         staffID = apiReturn["staff_number"]
         
         if args.respond:    # Print output if asked
