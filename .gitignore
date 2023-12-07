@@ -6,7 +6,7 @@ venv/
 service_account.json
 APIResponseLogs
 __pycache__
-
+.pytest_cache
 
 CSV_files
 restrictor.py

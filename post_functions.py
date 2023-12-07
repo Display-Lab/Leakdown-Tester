@@ -136,20 +136,25 @@ def send_locals(numberToSend, folderPath, requestID):
 
     for file_name in files_to_send:
         request_count += 1
+        # Throttle requests to GCP only
         if request_count % 6 == 0 and args.target == 'cloud':
             logger.info(f'Throttling requests for 30 seconds...')
             time.sleep(30)
         
         logger.debug(f'Attempting file: {file_name}')
         file_path = os.path.join(folderPath, file_name)
-        try:
-            with open(file_path, 'r') as file:
-                json_data = json.load(file)
-                json_str = json.dumps(json_data, indent=2)  # Serialize with proper formatting
-                post_and_respond(json_str, requestID)       # Send and respond to post request
-        
-        # Error catchers for debugging errors
-        except json.decoder.JSONDecodeError as e:
-            logger.warning(f"JSON decoding error in {file_name}: {e}")
-        except Exception as e:
-            logger.warning(f"Error reading {file_name}: {e}")
+        send_arbitrary(file_path, requestID)
+
+
+def send_arbitrary(file_path, requestID):
+    try:
+        with open(file_path, 'r') as file:
+            json_data = json.load(file)
+            json_str = json.dumps(json_data, indent=2)  # Serialize with proper formatting
+            post_and_respond(json_str, requestID)       # Send and respond to post request
+    
+    # Error catchers for debugging errors
+    except json.decoder.JSONDecodeError as e:
+        logger.warning(f"JSON decoding error in {file_path}: {e}")
+    except Exception as e:
+        logger.warning(f"Error reading {file_path}: {e}")
