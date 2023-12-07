@@ -1,6 +1,10 @@
 # Leakdown Tester Changelog  
-## Version 1.3.0
-*Released TBD*
+## Version 1.3.0  
+*Released TBD*  
+**Added:** Regression testing infrastructure for PFP API  
+- pfp_regression.py is a valid target for the pytest module for automatic regression testing  
+- pfp_regression_tests.ipynb is a Jupyter Notebook with documentation for development and testing of new test cases and test functions  
+
 **Added:** Detailed summary report for multi-message debug of PFP API
 - Use --report to generate a summary of measures, templates, and causal pathways which were used in feedback generation
   

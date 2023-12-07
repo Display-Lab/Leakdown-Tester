@@ -1,5 +1,5 @@
 from LDT_Addendum import payloadHeader, payloadFooter, ldtVersion, hitlistCP, hitlistIM, postwoman, pilotPairs
-from post_functions import test_inputfile, repo_test, post_and_respond, send_locals
+from post_functions import test_inputfile, repo_test, post_and_respond, send_locals, send_arbitrary
 from response_handling import report_summary
 from settings import args, report_data
 
@@ -217,7 +217,13 @@ def run_requests(behavior, threadIndex, requestID, barrier):
             # Send arbitrary local JSON input_message files
             elif behavior == 'sendLocals':
                 requestID += f"Request 1"
-                send_locals(args.sendLocals, "Local_inputs", requestID)
+                # Pathway for sending numerous JSON files for volume testing
+                if args.localPath == 'Local_inputs/':
+                    send_locals(args.sendLocals, args.localPath, requestID)
+                # Pathway for sending single-message arbitrary JSON content (reg testing)
+                else:
+                    send_arbitrary(args.localPath, requestID)
+
 
     except Exception as e:
         logger.critical(f"{e}")

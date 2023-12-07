@@ -28,7 +28,7 @@ behaviorGroup.add_argument("--persona", choices=["alice", "bob", "chikondi", "de
 behaviorGroup.add_argument("--allPersonas", action="store_true", help="SetTrue: Test all knowledgebase persona input message files.")
 behaviorGroup.add_argument("--CP", choices=["goal_approach","goal_gain","goal_loss","improving","social_approach","social_better","social_gain","social_loss","social_worse","worsening","all"], help="Select a causal pathway (acronym) for testing.")
 behaviorGroup.add_argument("--allCPs", action="store_true", help="SetTrue: Test all causal-pathway-specific input message files.")
-behaviorGroup.add_argument("--sendLocals", type=int, default=1, help="Number of locally-hosted input messages to send.")
+behaviorGroup.add_argument("--sendLocals", type=int, default=None, help="Number of locally-hosted input messages to send.")
 #
 #  Output V&V arguments
 verificationGroup = ap.add_mutually_exclusive_group() # Mutually exclude V&V operations
@@ -42,7 +42,8 @@ ap.add_argument("--RF", type=int, default=12, help="Last row of data to read fro
 ap.add_argument("--CI", type=int, default=0, help="First column to read from CSV.")
 ap.add_argument("--CF", type=int, default=10, help="Final column to read from CSV.")
 # 
-# Required file pathing (argument specified)
+# File pathing arguments
+ap.add_argument("--localPath", type=str, default="Local_inputs/", help="Filepath to directory holding local JSON files to send.")
 ap.add_argument("--csv", type=str, default=None, help="CSV filepath; when specified overwrites 'CSVPATH', uses CSV data for JSON payload(s).")
 ap.add_argument("--servAcc", type=str, default=None, help="Filepath to the service account file to read from" )
 #
