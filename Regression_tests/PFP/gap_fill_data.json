@@ -18,7 +18,8 @@
       "has_part": "http://purl.obolibrary.org/obo/bfo#BFO_0000051",
       "has_disposition": "http://purl.obolibrary.org/obo/RO_0000091"
     },
-    "message_instance_id": "no-significant-data-test",
+    "message_instance_id": "pictoralist-gap-fill-test",
+    "current_month": "2023-08-01",
     "Performance_data": [
       [ "staff_number", "measure", "month", "passed_count", "flagged_count", "denominator", "peer_average_comparator", "peer_75th_percentile_benchmark", "peer_90th_percentile_benchmark", "MPOG_goal" ],
       [0, "BP01", "2023-03-01", 28, 1, 29, 1, 2, 3, 90.0 ],
