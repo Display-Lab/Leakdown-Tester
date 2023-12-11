@@ -19,7 +19,7 @@ def log_response_subset(response):
         # Declare dict of keys in API response to log
         standard_keys = [
             'staff_number', 'message_instance_id', 'performance_month', 'selected_comparator',                  # 'Naked' keys
-            'selected_candidate.display', 'selected_candidate.measure', 'selected_candidate.acceptable_by',     # Selected candidate keys
+            'selected_candidate.display', 'selected_candidate.measure', 'selected_candidate.acceptable_by', 'selected_candidate.message_template_name',     # Selected candidate keys
             'message.text_message'                                                                              # Message keys
         ]
         # Report image status vs returning full base64 key:
@@ -138,7 +138,7 @@ def update_summary_dicts(response_json, report_data):
     if 'selected_candidate' in response_json:
         report_data.pathways.append(str(response_json['selected_candidate'].get('acceptable_by')))          # Add pathway to dict, cast as string
         report_data.measures.append(str(response_json['selected_candidate'].get('measure')))                # Add measure to dict as string
-        report_data.templates.append(str(response_json['selected_candidate'].get('message_template_id')))   # Add message template ID as string
+        report_data.templates.append(str(response_json['selected_candidate'].get('message_template_name')))   # Add message template name as string
 
 
 ## Add summary text to log after all threads rejoin...
